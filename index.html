@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>NexusOS</title>
+
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+    <main id="desktop">
+        
+        <!-- Desktop Icons -->
+        <div class="desktop-icons">
+        
+            <div class="desktop-icon" id="computerIcon">
+               <div class="icon-image">💻</div>
+               <p>Computer</p>
+        </div>
+
+        <div class="desktop-icon" id="notesIcom">
+            <div class="icon-image">📝</div>
+            <p>Notes</p>
+        </div>
+
+        <div class="desktop-icon" id="terminalIcon">
+           <div class="icon-image">⌨️</div>
+           <p>Terminal</p>
+        </div>
+
+    </div>
+
+
+    <!--Welcome Window-->
+    <div class="window" id="welcomeWindow">
+
+       <div class="window-header">
+        
+          <span>Welcome to NexusOS</span> 
+          <div class="window-buttons">
+            <button class="minimize-button">-</button>
+
+            <button class="close-button" id="closeWelcome">
+              x
+            </button>
+
+          </div>
+
+        </div>
+     
+        <div class="window-content">
+            <h1>Nexus05</h1>
+
+            <p> 
+              Welcome to your browser-based operating system.
+            </p>
+
+            <button id="exploreButton">
+                Explore NexusOS
+            </button>
+
+        </div>
+
+    </div>
+
+
+    <!--Start Menu-->
+    <div id="startMenu">
+        <div class="start-menu-header">
+            <h2>NexusOS</h2>
+            <p>Welcome, Kunal</p>
+        </div>
+
+        <div class="start-menu-apps">
+            <button class="start-app">Computer</button>
+            <button class="start-app">Notes</button>
+            <button class="start-app">Terminal</button>
+            <button class="start-app">Settings</button>
+        </div>
+    </div>
+
+    <!--Taskbar-->
+    <div class="taskbar">
+        <button id="startButton">◈</button>
+
+        <div class="taskbar-title">
+            NexusOS
+        </div>
+
+        <div id="clock">
+            00:00
+        </div>
+    </div>
+
+    </main>
+
+
+
+
+<script src="./script.js"></script>
+</body>
+</html>
