@@ -41,7 +41,7 @@
         
           <span>Welcome to NexusOS</span> 
           <div class="window-buttons">
-            <button class="minimize-button">-</button>
+            <button class="minimize-button" id="minimizeWelcome">-</button>
 
             <button class="close-button" id="closeWelcome">
               x
@@ -72,7 +72,8 @@
             <span>Nexus Notes</span>
 
             <div class="window-buttons">
-                <button id="closeNotes"></button>
+                <button class="minimize-button" id="minimizeNotes">-</button>
+                <button class="close-button" id="closeNotes">x</button>
             </div>
         </div>
 
@@ -113,7 +114,11 @@
         <div class="taskbar-title">
             NexusOS
         </div>
-
+        <div class="taskbar-apps">
+            <button id="welcomeTaskButton">Welcome</button>
+            <button id="notesTaskButton">Notes</button>
+        </div>
+        
         <div id="clock">
             00:00
         </div>

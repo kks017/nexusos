@@ -1,10 +1,13 @@
 const welcomeWindow = document.getElementById("welcomeWindow");
 const windowHeader = welcomeWindow.querySelector(".window-header");
 const closeWelcome = document.getElementById("closeWelcome");
+const minimizeWelcome = document.getElementById("minimizeWelcome");
 const startButton = document.getElementById("startButton");
 const startMenu = document.getElementById("startMenu");
 const clock = document.getElementById("clock");
 const exploreButton = document.getElementById("exploreButton");
+const welcomeTaskButton = document.getElementById("welcomeTaskButton");
+const notesTaskButton = document.getElementById("notesTaskButton");
 
 if (exploreButton) {
     exploreButton.addEventListener("click", function () {
@@ -12,28 +15,77 @@ if (exploreButton) {
     });
 }
 
-/* DRAGGABLE WINDOW */
-let isDragging = false;
-let offsetX = 0;
-let offsetY = 0;
+/* NEXUSOS WINDOW MANAGER */
 
-windowHeader.addEventListener("mousedown", function (event) {
-    isDragging = true;
-    offsetX = event.clientX - welcomeWindow.offsetLeft;
-    offsetY = event.clientY - welcomeWindow.offsetTop;
+let highestZIndex = 20;
+
+const allWindows = document.querySelectorAll(".window");
+
+function focusWindow(windowElement) {
+    highestZIndex++;
+
+    allWindows.forEach(function(win) {
+        win.classList.remove("active");
+    });
+    windowElement.classList.add("active");
+    windowElement.style.zIndex = highestZIndex;
+}
+
+function makeDraggable(windowElement) {
+    const header = windowElement.querySelector(".window-header");
+
+    let dragging = false;
+    let offsetX = 0;
+    let offsetY = 0;
+
+    header.addEventListener("pointerdown", function(event) {
+        if (event.target.closest("button")) return;
+
+        dragging = true;
+
+        offsetX = event.clientX - windowElement.offsetLeft;
+        offsetY = event.clientY - windowElement.offsetTop;
+
+        header.setPointerCapture(event.pointerId);
+        focusWindow(windowElement);
+    });
+
+    header.addEventListener("pointermove", function(event) {
+        if (!dragging) return;
+
+        const desktop = document.getElementById("desktop");
+
+        let newX = event.clientX - offsetX;
+        let newY = event.clientY - offsetY;
+
+        newX = Math.max(
+            0,
+            Math.min(newX, desktop.clientWidth - windowElement.offsetWidth)
+        );
+
+        newY = Math.max(
+            0,
+            Math.min(newY, desktop.clientHeight - 55 - header.offsetHeight)
+        );
+
+        windowElement.style.left = newX + "px";
+        windowElement.style.top = newY + "px";
+    });
+
+    function stopDragging() {
+        dragging = false;
+    }
+
+    header.addEventListener("pointerup", stopDragging);
+    header.addEventListener("pointercancel", stopDragging);
+}
+
+allWindows.forEach(function(win) {
+    makeDraggable(win);
+    win.addEventListener("pointerdown", function() {
+        focusWindow(win);
+    });
 });
-
-document.addEventListener("mousemove", function (event) {
-    if (!isDragging) return;
-
-    welcomeWindow.style.left = event.clientX - offsetX + "px";
-    welcomeWindow.style.top = event.clientY - offsetY + "px";
-});
-
-document.addEventListener("mouseup", function () {
-    isDragging = false;
-});
-
 /* CLOSE WINDOW */
 closeWelcome.addEventListener("click", function () {
     welcomeWindow.style.display = "none";
@@ -66,20 +118,16 @@ setInterval(updateClock, 1000);
 const notesWindow = document.getElementById("notesWindow");
 const notesIcon = document.getElementById("notesIcon");
 const closeNotes = document.getElementById("closeNotes");
+const minimizeNotes = document.getElementById("minimizeNotes");
 const notesText = document.getElementById("notesText");
 const saveStatus = document.getElementById("saveStatus");
 
 // Open Notes when clicking the desktop icon
 notesIcon.addEventListener("click", function () {
-    notesWindow.style.display = "block";
+    restoreWindow(notesWindow);
 });
 
 // Close the Notes Window
-closeNotes.addEventListener("click", function () {
-    notesWindow.style.display = "none";
-});
-
-// Close the Notes window
 closeNotes.addEventListener("click", function () {
     notesWindow.style.display = "none";
 });
@@ -91,4 +139,30 @@ notesText.value = localStorage.getItem("nexusNotes") || "";
 notesText.addEventListener("input", function() {
     localStorage.setItem("nexusNotes", notesText.value);
     saveStatus.textContent = "All changes Saved";
+});
+
+
+function minimizeWindow(windowElement) {
+    windowElement.style.display = "none";
+}
+
+function restoreWindow(windowElement) {
+    windowElement.style.display = "block";
+    focusWindow(windowElement);
+}
+
+minimizeWelcome.addEventListener("click", function() {
+    minimizeWindow(welcomeWindow);
+});
+
+minimizeNotes.addEventListener("click", function() {
+    minimizeWindow(notesWindow);
+});
+
+welcomeTaskButton.addEventListener("click", function() {
+    restoreWindow(welcomeWindow);
+});
+
+notesTaskButton.addEventListener("click", function() {
+    restoreWindow(notesWindow);
 });
