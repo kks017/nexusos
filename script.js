@@ -1,5 +1,3 @@
-alert("NexusOS JavaScript loaded successfully!");
-
 const welcomeWindow = document.getElementById("welcomeWindow");
 const windowHeader = welcomeWindow.querySelector(".window-header");
 const closeWelcome = document.getElementById("closeWelcome");
@@ -61,3 +59,36 @@ function updateClock() {
 
 updateClock();
 setInterval(updateClock, 1000);
+
+/* NEXUS NOTES APPLICATION */
+
+// Find the Notes elemtents in the HTML
+const notesWindow = document.getElementById("notesWindow");
+const notesIcon = document.getElementById("notesIcon");
+const closeNotes = document.getElementById("closeNotes");
+const notesText = document.getElementById("notesText");
+const saveStatus = document.getElementById("saveStatus");
+
+// Open Notes when clicking the desktop icon
+notesIcon.addEventListener("click", function () {
+    notesWindow.style.display = "block";
+});
+
+// Close the Notes Window
+closeNotes.addEventListener("click", function () {
+    notesWindow.style.display = "none";
+});
+
+// Close the Notes window
+closeNotes.addEventListener("click", function () {
+    notesWindow.style.display = "none";
+});
+
+//Load notes saved from a previous session
+notesText.value = localStorage.getItem("nexusNotes") || "";
+
+//Automatically save whenever the user types
+notesText.addEventListener("input", function() {
+    localStorage.setItem("nexusNotes", notesText.value);
+    saveStatus.textContent = "All changes Saved";
+});
