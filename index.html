@@ -91,6 +91,36 @@
     
     </div>
 
+<!--Nexus File Manager-->
+
+<div class="window files-window" id="filesWindow">
+
+    <div class="window-header">
+        <span>Nexus Files</span>
+
+        <div class="window-buttons">
+            <button class="minimize-button" id="minimizeFiles">-</button>
+            <button class="close-button" id="closeFiles">x</button>
+        </div>
+    </div>
+
+    <div class="files-content">
+
+        <div class="files-toolbar">
+            <button id="newFolderButton">+ New Folder</button>
+            <span>My Files</span>
+        </div>
+
+        <div id="filesList" class="files-list">
+            <!--Folders will appear here-->
+        </div>
+
+        <p id="filesStatus">Your personal file space</p>
+       </div>
+</div>
+
+
+
 
     <!--Start Menu-->
     <div id="startMenu">
@@ -115,6 +145,7 @@
             NexusOS
         </div>
         <div class="taskbar-apps">
+            <button id="filesTaskButton"> Files</button>
             <button id="welcomeTaskButton">Welcome</button>
             <button id="notesTaskButton">Notes</button>
         </div>

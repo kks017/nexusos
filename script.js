@@ -166,3 +166,45 @@ welcomeTaskButton.addEventListener("click", function() {
 notesTaskButton.addEventListener("click", function() {
     restoreWindow(notesWindow);
 });
+
+
+/* Nexus File Manager */
+
+const filesWindow = document.getElementById("filesWindow");
+const filesIcon = document.getElementById("filesIcon");
+const closeFiles = document.getElementById("closeFiles");
+const minimizeFiles = document.getElementById("minimizeFiles");
+const filesList = document.getElementById("filesTaskButton");
+const filesStatus = document.getElementById("newFolderButton");
+
+
+// Load saved folders
+
+let folders = [];
+
+try {
+    const savedFolders = JSON.parse(
+        localStorage.getItem("nexusFolders") || "[]"
+    );
+
+    if (Array.isArray(savedFolders)) {
+        folders = savedFolders.filter(
+            name => typeof name === "string"
+        );
+    }
+
+} catch (error) {
+    console.warn("Could not load saved folders:", error);
+}
+
+
+// Display folders in the File Manager
+function renderFolders() {
+    filesList.replaceChildren();
+
+    folders.forEach(function(folderName) {
+        const folderItem = document.createElement("div");
+        folder.className = "file-item";
+
+        const icon = document.createElement("div"); 
+        folder.className = "file-item";
