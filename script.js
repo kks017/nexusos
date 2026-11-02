@@ -168,18 +168,19 @@ notesTaskButton.addEventListener("click", function() {
 });
 
 
-/* Nexus File Manager */
+/* NEXUS FILE MANAGER */
 
+// Get HTML elements
 const filesWindow = document.getElementById("filesWindow");
-const filesIcon = document.getElementById("filesIcon");
+const computerIcon = document.getElementById("computerIcon");
 const closeFiles = document.getElementById("closeFiles");
 const minimizeFiles = document.getElementById("minimizeFiles");
-const filesList = document.getElementById("filesTaskButton");
-const filesStatus = document.getElementById("newFolderButton");
+const filesTaskButton = document.getElementById("filesTaskButton");
+const newFolderButton = document.getElementById("newFolderButton");
+const filesList = document.getElementById("filesList");
+const filesStatus = document.getElementById("filesStatus");
 
-
-// Load saved folders
-
+// Load previously saved folders
 let folders = [];
 
 try {
@@ -192,19 +193,89 @@ try {
             name => typeof name === "string"
         );
     }
-
 } catch (error) {
-    console.warn("Could not load saved folders:", error);
+    console.error("Failed to load folders:", error);
 }
 
-
-// Display folders in the File Manager
+// Display all folders
 function renderFolders() {
     filesList.replaceChildren();
 
     folders.forEach(function(folderName) {
         const folderItem = document.createElement("div");
-        folder.className = "file-item";
+        folderItem.className = "file-item";
 
-        const icon = document.createElement("div"); 
-        folder.className = "file-item";
+        const icon = document.createElement("div");
+        icon.className = "folder-icon";
+        icon.textContent = "📁";
+
+        const name = document.createElement("div");
+        name.className = "folder-name";
+        name.textContent = folderName;
+
+        folderItem.appendChild(icon);
+        folderItem.appendChild(name);
+
+        filesList.appendChild(folderItem);
+    });
+
+    filesStatus.textContent =
+        folders.length + " folder(s)";
+}
+
+// Create a new folder
+newFolderButton.addEventListener("click", function() {
+    const folderName = prompt("Enter a folder name:");
+
+    if (folderName === null) return;
+
+    const cleanName = folderName.trim();
+
+    if (cleanName === "") {
+        alert("Folder name cannot be empty.");
+        return;
+    }
+
+    if (folders.includes(cleanName)) {
+        alert("This folder already exists.");
+        return;
+    }
+
+    const updatedFolders = [...folders, cleanName];
+
+    try {
+        localStorage.setItem(
+            "nexusFolders",
+            JSON.stringify(updatedFolders)
+        );
+
+        folders = updatedFolders;
+        renderFolders();
+    } catch (error) {
+        console.error("Failed to save folder:", error);
+        alert("Could not save the folder.");
+    }
+});
+
+// Open File Manager
+computerIcon.addEventListener("click", function() {
+    restoreWindow(filesWindow);
+});
+
+// Close File Manager
+closeFiles.addEventListener("click", function() {
+    filesWindow.style.display = "none";
+});
+
+// Minimize File Manager
+minimizeFiles.addEventListener("click", function() {
+    minimizeWindow(filesWindow);
+});
+
+// Restore from taskbar
+filesTaskButton.addEventListener("click", function() {
+    restoreWindow(filesWindow);
+});
+
+// Display saved folders when NexusOS starts
+renderFolders();
