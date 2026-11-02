@@ -1,165 +1,345 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-    <title>NexusOS</title>
-
-    <link rel="stylesheet" href="style.css">
-</head>
-
-<body>
-
-    <main id="desktop">
-        
-        <!-- Desktop Icons -->
-        <div class="desktop-icons">
-        
-            <div class="desktop-icon" id="computerIcon">
-               <div class="icon-image">💻</div>
-               <p>Computer</p>
-        </div>
-
-        <div class="desktop-icon" id="notesIcon">
-            <div class="icon-image">📝</div>
-            <p>Notes</p>
-        </div>
-
-        <div class="desktop-icon" id="terminalIcon">
-           <div class="icon-image">⌨️</div>
-           <p>Terminal</p>
-        </div>
-
-    </div>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#111827" />
+    <title>NexusOS | Your Digital Workspace</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <main id="desktop" class="desktop theme-ocean">
+      <section class="desktop-icons" aria-label="Desktop apps">
+        <button class="desktop-icon" data-app="files">
+          <span class="icon-image">📁</span>
+          <span>Files</span>
+        </button>
 
 
-    <!--Welcome Window-->
-    <div class="window" id="welcomeWindow">
+        <button class="desktop-icon" data-app="notes">
+          <span class="icon-image">📝</span>
+          <span>Notes</span>
+        </button>
 
-       <div class="window-header">
-        
-          <span>Welcome to NexusOS</span> 
-          <div class="window-buttons">
-            <button class="minimize-button" id="minimizeWelcome">-</button>
+        <button class="desktop-icon" data-app="terminal">
+          <span class="icon-image">💻</span>
+          <span>Terminal</span>
+        </button>
 
-            <button class="close-button" id="closeWelcome">
-              x
-            </button>
+        <button class="desktop-icon" data-app="calculator">
+          <span class="icon-image">🧮</span>
+          <span>Calculator</span>
+        </button>
 
+        <button class="desktop-icon" data-app="settings">
+          <span class="icon-image">⚙️</span>
+          <span>Settings</span>
+        </button>
+      </section>
+
+      <section class="window" id="welcomeWindow" data-window="welcome">
+        <header class="window-header">
+          <div class="window-title">
+            <span>✨</span>
+            <span>Welcome to NexusOS</span>
           </div>
 
-        </div>
-     
-        <div class="window-content">
-            <h1>NexusOS</h1>
+          <div class="window-controls">
+            <button class="window-minimize" data-action="minimize" aria-label="Minimize Welcome">−</button>
+            <button class="window-close" data-action="close" aria-label="Close Welcome">×</button>
+          </div>
+        </header>
 
-            <p> 
-              Welcome to your browser-based operating system.
-            </p>
+        <div class="window-body welcome-body">
+          <div class="welcome-logo">◈</div>
 
-            <button id="exploreButton">
-                Explore NexusOS
-            </button>
+          <h1>NexusOS</h1>
 
-        </div>
+          <p class="welcome-subtitle">
+            Your personal operating system, right inside your browser.
+          </p>
 
-    </div>
-
-    <div class="window notes-window" id="notesWindow">
-
-        <div class="window-header">
-            <span>Nexus Notes</span>
-
-            <div class="window-buttons">
-                <button class="minimize-button" id="minimizeNotes">-</button>
-                <button class="close-button" id="closeNotes">x</button>
+          <div class="welcome-features">
+            <div>
+              <span>📁</span>
+              <strong>Organize</strong>
+              <small>Virtual files and folders</small>
             </div>
+
+            <div>
+              <span>📝</span>
+              <strong>Create</strong>
+              <small>Write and save notes</small>
+            </div>
+
+            <div>
+              <span>⌨️</span>
+              <strong>Explore</strong>
+              <small>Use the Nexus terminal</small>
+            </div>
+          </div>
+
+          <button class="primary-button" id="exploreButton">Open File Manager</button>
         </div>
+      </section>
 
-        <div class="window-content">
+      <section class="window hidden" id="filesWindow" data-window="files">
+        <header class="window-header">
+          <div class="window-title">
+            <span>📁</span>
+            <span>Nexus Files</span>
+          </div>
 
-            <h2>My Notes</h2>
-
-            <textarea
-                id="notesText"
-                placeholder="Write your notes here..."
-            ></textarea>
-
-            <p id="saveStatus">All changes saved</p>
-        </div>
-    
-    </div>
-
-<!--Nexus File Manager-->
-
-<div class="window files-window" id="filesWindow">
-
-    <div class="window-header">
-        <span>Nexus Files</span>
-
-        <div class="window-buttons">
-            <button class="minimize-button" id="minimizeFiles">-</button>
-            <button class="close-button" id="closeFiles">x</button>
-        </div>
-    </div>
-
-    <div class="files-content">
+          <div class="window-controls">
+            <button class="window-minimize" data-action="minimize" aria-label="Minimize Files">−</button>
+            <button class="window-close" data-action="close" aria-label="Close Files">×</button>
+          </div>
+        </header>
 
         <div class="files-toolbar">
-            <button id="newFolderButton">+ New Folder</button>
-            <span>My Files</span>
+          <button id="backFolderButton" class="secondary-button">Back</button>
+          <span id="folderPath">/ Home</span>
+          <button id="newFolderButton" class="primary-button">+ Folder</button>
+          <button id="newFileButton" class="secondary-button">+ Text File</button>
         </div>
 
-        <div id="filesList" class="files-list">
-            <!--Folders will appear here-->
+        <div class="files-layout">
+          <aside class="files-sidebar">
+            <h3>Locations</h3>
+            <button id="homeFolderButton" type="button">Home</button>
+            <button id="documentsFolderButton" type="button">Documents</button>
+          </aside>
+
+          <div class="files-main">
+            <div id="filesList" class="files-grid"></div>
+            <p id="filesStatus" class="status-text">Ready</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="window hidden" id="editorWindow" data-window="editor">
+        <header class="window-header">
+          <div class="window-title">
+            <span>📝</span>
+            <span>Nexus Editor</span>
+          </div>
+
+          <div class="window-controls">
+            <button class="window-minimize" data-action="minimize" aria-label="Minimize Editor">−</button>
+            <button class="window-close" data-action="close" aria-label="Close Editor">×</button>
+          </div>
+        </header>
+
+        <div class="editor-content">
+          <div class="editor-header">
+            <h2 id="editorTitle">Untitled.txt</h2>
+          </div>
+
+          <textarea id="fileEditor" placeholder="Start writing..."></textarea>
+
+          <div class="editor-footer">
+            <span id="editorStatus">Ready</span>
+            <button id="saveFileButton" class="primary-button" type="button">Save File</button>
+          </div>
+        </div>
+      </section>
+
+      <section class="window hidden" id="notesWindow" data-window="notes">
+        <header class="window-header">
+          <div class="window-title">
+            <span>📝</span>
+            <span>Nexus Notes</span>
+          </div>
+
+          <div class="window-controls">
+            <button class="window-minimize" data-action="minimize" aria-label="Minimize Notes">−</button>
+            <button class="window-close" data-action="close" aria-label="Close Notes">×</button>
+          </div>
+        </header>
+
+        <div class="notes-content">
+          <input id="noteTitle" type="text" placeholder="Untitled Note" />
+          <textarea id="notesText" placeholder="Your thoughts start here..."></textarea>
+
+          <div class="notes-footer">
+            <span id="noteWordCount">0 words</span>
+            <span id="saveStatus">All changes saved</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="window hidden" id="terminalWindow" data-window="terminal">
+        <header class="window-header">
+          <div class="window-title">
+            <span>⌨️</span>
+            <span>Nexus Terminal</span>
+          </div>
+
+          <div class="window-controls">
+            <button class="window-minimize" data-action="minimize" aria-label="Minimize Terminal">−</button>
+            <button class="window-close" data-action="close" aria-label="Close Terminal">×</button>
+          </div>
+        </header>
+
+        <div class="terminal-content">
+          <div id="terminalOutput" class="terminal-output">
+            <div>Welcome to Nexus Terminal v1.0</div>
+            <div>Type "help" for available commands.</div>
+          </div>
+
+          <form id="terminalForm" class="terminal-input-row">
+            <span class="terminal-prompt">nexus@home:~$</span>
+            <input
+              id="terminalInput"
+              type="text"
+              autocomplete="off"
+              spellcheck="false"
+              aria-label="Terminal command"
+            />
+          </form>
+        </div>
+      </section>
+
+      <section class="window hidden" id="calculatorWindow" data-window="calculator">
+        <header class="window-header">
+          <div class="window-title">
+            <span>🧮</span>
+            <span>Nexus Calculator</span>
+          </div>
+
+          <div class="window-controls">
+            <button class="window-minimize" data-action="minimize" aria-label="Minimize Calculator">−</button>
+            <button class="window-close" data-action="close" aria-label="Close Calculator">×</button>
+          </div>
+        </header>
+
+        <div class="calculator-content">
+          <input id="calculatorDisplay" type="text" value="0" readonly aria-label="Calculator display" />
+
+          <div class="calculator-grid">
+            <button type="button" data-calc="clear">AC</button>
+            <button type="button" data-calc="backspace">⌫</button>
+            <button type="button" data-calc="percent">%</button>
+            <button type="button" data-calc="divide">÷</button>
+
+            <button type="button" data-calc="7">7</button>
+            <button type="button" data-calc="8">8</button>
+            <button type="button" data-calc="9">9</button>
+            <button type="button" data-calc="multiply">×</button>
+
+            <button type="button" data-calc="4">4</button>
+            <button type="button" data-calc="5">5</button>
+            <button type="button" data-calc="6">6</button>
+            <button type="button" data-calc="subtract">−</button>
+
+            <button type="button" data-calc="1">1</button>
+            <button type="button" data-calc="2">2</button>
+            <button type="button" data-calc="3">3</button>
+            <button type="button" data-calc="add">+</button>
+
+            <button type="button" data-calc="sign">±</button>
+            <button type="button" data-calc="0">0</button>
+            <button type="button" data-calc="decimal">.</button>
+            <button type="button" data-calc="equals" class="equals-button">=</button>
+          </div>
+        </div>
+      </section>
+
+      <section class="window hidden" id="settingsWindow" data-window="settings">
+        <header class="window-header">
+          <div class="window-title">
+            <span>⚙️</span>
+            <span>Nexus Settings</span>
+          </div>
+
+          <div class="window-controls">
+            <button class="window-minimize" data-action="minimize" aria-label="Minimize Settings">−</button>
+            <button class="window-close" data-action="close" aria-label="Close Settings">×</button>
+          </div>
+        </header>
+
+        <div class="settings-content">
+          <h2>Personalization</h2>
+          <p>Choose your desktop appearance.</p>
+
+          <div class="theme-grid">
+            <button class="theme-option" type="button" data-theme="ocean">
+              <span class="theme-preview ocean-preview"></span>
+              Ocean
+            </button>
+
+            <button class="theme-option" type="button" data-theme="sunset">
+              <span class="theme-preview sunset-preview"></span>
+              Sunset
+            </button>
+
+            <button class="theme-option" type="button" data-theme="forest">
+              <span class="theme-preview forest-preview"></span>
+              Forest
+            </button>
+
+            <button class="theme-option" type="button" data-theme="midnight">
+              <span class="theme-preview midnight-preview"></span>
+              Midnight
+            </button>
+          </div>
+
+          <div class="settings-section">
+            <h3>System Information</h3>
+            <p>Operating System: NexusOS</p>
+            <p>Version: 1.0</p>
+            <p>Platform: Web Browser</p>
+            <p>Storage: Browser Local Storage</p>
+          </div>
+        </div>
+      </section>
+
+      <aside id="startMenu" class="start-menu hidden">
+        <div class="start-menu-heading">
+          <div class="start-avatar">K</div>
+          <div>
+            <strong>NexusOS</strong>
+            <small>Personal Workspace</small>
+          </div>
         </div>
 
-        <p id="filesStatus">Your personal file space</p>
-       </div>
-</div>
+        <input
+          id="appSearch"
+          type="search"
+          placeholder="Search applications..."
+          aria-label="Search applications"
+        />
 
-
-
-
-    <!--Start Menu-->
-    <div id="startMenu">
-        <div class="start-menu-header">
-            <h2>NexusOS</h2>
-            <p>Welcome, Kunal</p>
+        <div class="start-app-list">
+          <button type="button" data-app="files">📁 Files</button>
+          <button type="button" data-app="notes">📝 Notes</button>
+          <button type="button" data-app="terminal">⌨️ Terminal</button>
+          <button type="button" data-app="calculator">🧮 Calculator</button>
+          <button type="button" data-app="settings">⚙️ Settings</button>
+          <button type="button" data-app="welcome">✨ Welcome</button>
         </div>
 
-        <div class="start-menu-apps">
-            <button class="start-app">Computer</button>
-            <button class="start-app">Notes</button>
-            <button class="start-app">Terminal</button>
-            <button class="start-app">Settings</button>
+        <div class="start-menu-footer">
+          <span>NexusOS v1.0</span>
         </div>
-    </div>
+      </aside>
 
-    <!--Taskbar-->
-    <div class="taskbar">
-        <button id="startButton">◈</button>
+      <footer class="taskbar">
+        <button id="startButton" aria-label="Open Start menu" type="button">◈</button>
 
-        <div class="taskbar-title">
-            NexusOS
-        </div>
-        <div class="taskbar-apps">
-            <button id="filesTaskButton"> Files</button>
-            <button id="welcomeTaskButton">Welcome</button>
-            <button id="notesTaskButton">Notes</button>
-        </div>
-        
-        <div id="clock">
-            00:00
-        </div>
-    </div>
+        <div class="taskbar-brand">NexusOS</div>
 
+        <div id="taskbarApps" class="taskbar-apps"></div>
+
+        <div class="system-tray">
+          <span>●</span>
+          <span id="clock">00:00</span>
+        </div>
+      </footer>
+
+      <div id="toast" class="toast hidden"></div>
     </main>
 
-
-
-
-<script src="./script.js"></script>
-</body>
+    <script src="script.js"></script>
+  </body>
 </html>
