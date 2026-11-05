@@ -1,1140 +1,573 @@
 
 "use strict";
 
-/* =====================================
-   NEXUSOS - CORE SYSTEM
-   ===================================== */
+/* NexusOS 1.0 */
 
-const desktop = document.getElementById("desktop");
-const startButton = document.getElementById("startButton");
+const apps = ["files", "editor", "notes", "terminal", "calculator"];
+const taskApps = document.getElementById("taskApps");
 const startMenu = document.getElementById("startMenu");
-const taskbarApps = document.getElementById("taskbarApps");
-const clock = document.getElementById("clock");
-const toast = document.getElementById("toast");
 
-const windows = new Map();
+let topWindow = 20;
 
-let topZIndex = 20;
-let toastTimeout = null;
+/* Window Manager */
 
-const APP_NAMES = {
-    welcome: "✨ Welcome",
-    files: "📁 Files",
-    editor: "📄 Editor",
-    notes: "📝 Notes",
-    terminal: "⌨️ Terminal",
-    calculator: "🧮 Calculator",
-    settings: "⚙️ Settings"
-};
+function openApp(name) {
+    const win = document.getElementById(name);
 
-/* =====================================
-   LOCAL STORAGE UTILITIES
-   ===================================== */
-
-function loadJSON(key, fallback) {
-    try {
-        const stored = localStorage.getItem(key);
-
-        if (stored === null) {
-            return fallback;
-        }
-
-        return JSON.parse(stored);
-    } catch (error) {
-        console.error("Storage loading error:", error);
-        return fallback;
-    }
-}
-
-function saveJSON(key, value) {
-    try {
-        localStorage.setItem(key, JSON.stringify(value));
-        return true;
-    } catch (error) {
-        console.error("Storage saving error:", error);
-        showToast("Could not save data.");
-        return false;
-    }
-}
-
-/* =====================================
-   NOTIFICATIONS
-   ===================================== */
-
-function showToast(message) {
-    toast.textContent = message;
-    toast.classList.remove("hidden");
-
-    clearTimeout(toastTimeout);
-
-    toastTimeout = setTimeout(function() {
-        toast.classList.add("hidden");
-    }, 2600);
-}
-
-/* =====================================
-   WINDOW REGISTRATION
-   ===================================== */
-
-document.querySelectorAll("[data-window]").forEach(
-    function(element) {
-        const id = element.dataset.window;
-        windows.set(id, element);
-    }
-);
-
-function getWindow(appId) {
-    return windows.get(appId);
-}
-
-function isWindowVisible(element) {
-    return !element.classList.contains("hidden");
-}
-
-function focusWindow(element) {
-    topZIndex++;
-
-    windows.forEach(function(win) {
-        win.classList.remove("active");
-    });
-
-    element.classList.add("active");
-    element.style.zIndex = topZIndex;
-
-    renderTaskbar();
-}
-
-function openApp(appId) {
-    const element = getWindow(appId);
-
-    if (!element) {
-        showToast("Application not available.");
-        return;
-    }
-
-    element.classList.remove("hidden");
-    focusWindow(element);
-
+    win.classList.remove("hidden");
+    focusWindow(win);
     startMenu.classList.add("hidden");
-
-    if (appId === "terminal") {
-        document.getElementById("terminalInput").focus();
-    }
-
-    renderTaskbar();
+    updateTaskbar();
 }
 
-function minimizeApp(appId) {
-    const element = getWindow(appId);
-
-    if (!element) return;
-
-    element.classList.add("hidden");
-    element.classList.remove("active");
-
-    renderTaskbar();
+function closeApp(name) {
+    document.getElementById(name).classList.add("hidden");
+    updateTaskbar();
 }
 
-function closeApp(appId) {
-    minimizeApp(appId);
+function minimizeApp(name) {
+    closeApp(name);
 }
 
-/* =====================================
-   WINDOW DRAGGING
-   ===================================== */
+function focusWindow(win) {
+    topWindow++;
 
-function makeDraggable(element) {
-    const header = element.querySelector(".window-header");
-
-    if (!header) return;
-
-    let dragging = false;
-    let startX = 0;
-    let startY = 0;
-    let originalX = 0;
-    let originalY = 0;
-
-    header.addEventListener("pointerdown", function(event) {
-        if (event.button !== 0) return;
-
-        if (event.target.closest("button")) {
-            return;
-        }
-
-        dragging = true;
-
-        startX = event.clientX;
-        startY = event.clientY;
-
-        originalX = element.offsetLeft;
-        originalY = element.offsetTop;
-
-        header.setPointerCapture(event.pointerId);
-
-        focusWindow(element);
+    document.querySelectorAll(".window").forEach(function(w) {
+        w.classList.remove("active");
     });
 
-    header.addEventListener("pointermove", function(event) {
-        if (!dragging) return;
-
-        const differenceX = event.clientX - startX;
-        const differenceY = event.clientY - startY;
-
-        const maximumX = Math.max(
-            0,
-            desktop.clientWidth - element.offsetWidth
-        );
-
-        const maximumY = Math.max(
-            0,
-            desktop.clientHeight - 110
-        );
-
-        const nextX = Math.max(
-            0,
-            Math.min(originalX + differenceX, maximumX)
-        );
-
-        const nextY = Math.max(
-            0,
-            Math.min(originalY + differenceY, maximumY)
-        );
-
-        element.style.left = nextX + "px";
-        element.style.top = nextY + "px";
-    });
-
-    function stopDragging() {
-        dragging = false;
-    }
-
-    header.addEventListener("pointerup", stopDragging);
-    header.addEventListener("pointercancel", stopDragging);
-
-    element.addEventListener("pointerdown", function() {
-        focusWindow(element);
-    });
+    win.classList.add("active");
+    win.style.zIndex = topWindow;
 }
 
-windows.forEach(function(element, appId) {
-    makeDraggable(element);
+function updateTaskbar() {
+    taskApps.replaceChildren();
 
-    const minimizeButton = element.querySelector(
-        '[data-action="minimize"]'
-    );
-
-    const closeButton = element.querySelector(
-        '[data-action="close"]'
-    );
-
-    if (minimizeButton) {
-        minimizeButton.addEventListener("click", function() {
-            minimizeApp(appId);
-        });
-    }
-
-    if (closeButton) {
-        closeButton.addEventListener("click", function() {
-            closeApp(appId);
-        });
-    }
-});
-
-/* =====================================
-   TASKBAR
-   ===================================== */
-
-function renderTaskbar() {
-    taskbarApps.replaceChildren();
-
-    windows.forEach(function(element, appId) {
+    apps.forEach(function(name) {
+        const win = document.getElementById(name);
         const button = document.createElement("button");
 
-        button.textContent = APP_NAMES[appId] || appId;
-        button.className = element.classList.contains("active")
-            && isWindowVisible(element)
-            ? "active"
-            : "";
+        button.textContent = name;
 
-        button.addEventListener("click", function() {
-            if (
-                isWindowVisible(element) &&
-                element.classList.contains("active")
-            ) {
-                minimizeApp(appId);
+        if (!win.classList.contains("hidden")) {
+            button.classList.add("active");
+        }
+
+        button.onclick = function() {
+            if (win.classList.contains("hidden")) {
+                openApp(name);
             } else {
-                openApp(appId);
+                minimizeApp(name);
             }
-        });
+        };
 
-        taskbarApps.appendChild(button);
+        taskApps.appendChild(button);
     });
 }
 
-/* =====================================
-   DESKTOP AND START MENU
-   ===================================== */
+/* Drag Windows */
 
-document.querySelectorAll("[data-app]").forEach(
-    function(button) {
-        button.addEventListener("click", function() {
-            openApp(button.dataset.app);
-        });
-    }
-);
+document.querySelectorAll(".window").forEach(function(win) {
+    const bar = win.querySelector(".titlebar");
 
-startButton.addEventListener("click", function(event) {
-    event.stopPropagation();
+    let dragging = false;
+    let xOffset = 0;
+    let yOffset = 0;
+
+    bar.addEventListener("pointerdown", function(event) {
+        if (event.target.closest("button")) return;
+
+        dragging = true;
+        xOffset = event.clientX - win.offsetLeft;
+        yOffset = event.clientY - win.offsetTop;
+
+        bar.setPointerCapture(event.pointerId);
+        focusWindow(win);
+    });
+
+    bar.addEventListener("pointermove", function(event) {
+        if (!dragging) return;
+
+        const maxX = Math.max(0, innerWidth - win.offsetWidth);
+        const maxY = Math.max(0, innerHeight - 75);
+
+        const x = event.clientX - xOffset;
+        const y = event.clientY - yOffset;
+
+        win.style.left = Math.max(0, Math.min(x, maxX)) + "px";
+        win.style.top = Math.max(0, Math.min(y, maxY)) + "px";
+    });
+
+    bar.addEventListener("pointerup", function() {
+        dragging = false;
+    });
+
+    bar.addEventListener("pointercancel", function() {
+        dragging = false;
+    });
+
+    win.addEventListener("pointerdown", function() {
+        focusWindow(win);
+    });
+});
+
+/* Start Menu */
+
+document.getElementById("startButton").onclick = function() {
     startMenu.classList.toggle("hidden");
+};
 
-    if (!startMenu.classList.contains("hidden")) {
-        document.getElementById("appSearch").focus();
-    }
-});
-
-desktop.addEventListener("pointerdown", function(event) {
-    if (
-        !event.target.closest("#startMenu") &&
-        !event.target.closest("#startButton")
-    ) {
-        startMenu.classList.add("hidden");
-    }
-});
-
-document.getElementById("exploreButton")
-    .addEventListener("click", function() {
-        openApp("files");
-    });
-
-document.getElementById("appSearch")
-    .addEventListener("input", function(event) {
-        const query = event.target.value.toLowerCase();
-
-        document.querySelectorAll(".start-app-list button")
-            .forEach(function(button) {
-                const matches = button.textContent
-                    .toLowerCase()
-                    .includes(query);
-
-                button.classList.toggle("hidden", !matches);
-            });
-    });
-
-document.addEventListener("keydown", function(event) {
-    if (event.key === "Escape") {
-        startMenu.classList.add("hidden");
-    }
-});
-
-/* =====================================
-   SYSTEM CLOCK
-   ===================================== */
+/* Clock */
 
 function updateClock() {
-    const now = new Date();
-
-    clock.textContent = now.toLocaleTimeString(
-        [],
-        {
+    document.getElementById("clock").textContent =
+        new Date().toLocaleTimeString([], {
             hour: "2-digit",
             minute: "2-digit"
-        }
-    );
-
-    clock.title = now.toLocaleDateString(
-        [],
-        {
-            weekday: "long",
-            year: "numeric",
-            month: "long",
-            day: "numeric"
-        }
-    );
+        });
 }
 
 updateClock();
 setInterval(updateClock, 1000);
 
-/* =====================================
-   NOTES APPLICATION
-   ===================================== */
+/* Notes */
 
-const noteTitle = document.getElementById("noteTitle");
 const notesText = document.getElementById("notesText");
-const saveStatus = document.getElementById("saveStatus");
-const noteWordCount = document.getElementById("noteWordCount");
+const notesStatus = document.getElementById("notesStatus");
 
-const savedNote = loadJSON("nexus_note_v1", null);
+const oldNote = localStorage.getItem("nexus_note_v1");
 
-if (savedNote && typeof savedNote === "object") {
-    noteTitle.value = savedNote.title || "";
-    notesText.value = savedNote.content || "";
-} else {
+try {
+    if (oldNote) {
+        notesText.value = JSON.parse(oldNote).content || "";
+    } else {
+        notesText.value = localStorage.getItem("nexusNotes") || "";
+    }
+} catch {
     notesText.value = localStorage.getItem("nexusNotes") || "";
 }
 
-function updateWordCount() {
-    const content = notesText.value.trim();
+notesText.addEventListener("input", function() {
+    try {
+        localStorage.setItem("nexusNotes", notesText.value);
+        notesStatus.textContent = "Saved";
+    } catch {
+        notesStatus.textContent = "Save failed";
+    }
+});
 
-    const count = content
-        ? content.split(/\s+/).length
-        : 0;
+/* File System */
 
-    noteWordCount.textContent = count + " words";
-}
+const FILE_KEY = "nexus_files_final";
 
-function saveNotes() {
-    const note = {
-        title: noteTitle.value,
-        content: notesText.value,
-        updatedAt: new Date().toISOString()
-    };
-
-    saveStatus.textContent = "Saving...";
-
-    const saved = saveJSON("nexus_note_v1", note);
-
-    saveStatus.textContent = saved
-        ? "All changes saved"
-        : "Save failed";
-
-    updateWordCount();
-}
-
-noteTitle.addEventListener("input", saveNotes);
-notesText.addEventListener("input", saveNotes);
-
-updateWordCount();
-
-/* =====================================
-   VIRTUAL FILE SYSTEM
-   ===================================== */
-
-const filesList = document.getElementById("filesList");
-const filesStatus = document.getElementById("filesStatus");
-const folderPath = document.getElementById("folderPath");
-
-const DEFAULT_FILES = [
+const defaultFiles = [
     {
         id: "documents",
         name: "Documents",
         type: "folder",
-        parentId: "root",
+        parent: "root",
         content: ""
     },
     {
-        id: "projects",
-        name: "Projects",
-        type: "folder",
-        parentId: "root",
-        content: ""
-    },
-    {
-        id: "readme",
+        id: "welcome",
         name: "Welcome.txt",
         type: "file",
-        parentId: "root",
-        content:
-            "Welcome to NexusOS!\n\n" +
-            "Create folders and text files to get started."
+        parent: "root",
+        content: "Welcome to NexusOS!"
     }
 ];
 
-let fileSystem = loadJSON("nexus_files_v1", null);
+let files;
 
-if (!Array.isArray(fileSystem)) {
-    fileSystem = DEFAULT_FILES.map(function(item) {
-        return { ...item };
-    });
+try {
+    const saved = JSON.parse(localStorage.getItem(FILE_KEY));
 
-    saveJSON("nexus_files_v1", fileSystem);
+    if (Array.isArray(saved)) {
+        files = saved;
+    } else {
+        files = defaultFiles;
+    }
+} catch {
+    files = defaultFiles;
 }
 
-let currentFolderId = "root";
-let currentFileId = null;
+let currentFolder = "root";
+let currentFile = null;
 
-function generateId() {
-    if (crypto.randomUUID) {
-        return crypto.randomUUID();
+const fileList = document.getElementById("fileList");
+const fileText = document.getElementById("fileText");
+
+function saveFiles() {
+    try {
+        localStorage.setItem(FILE_KEY, JSON.stringify(files));
+        return true;
+    } catch {
+        alert("Unable to save files.");
+        return false;
     }
+}
 
+function createId() {
     return Date.now() + "-" + Math.random();
 }
 
-function findItem(id) {
-    return fileSystem.find(function(item) {
-        return item.id === id;
+function findFile(id) {
+    return files.find(function(file) {
+        return file.id === id;
     });
 }
 
-function getChildren(parentId) {
-    return fileSystem.filter(function(item) {
-        return item.parentId === parentId;
-    });
-}
+function folderPath() {
+    const parts = [];
+    let id = currentFolder;
 
-function getFolderPath(folderId) {
-    const names = [];
-    const visited = new Set();
-
-    let currentId = folderId;
-
-    while (currentId !== "root") {
-        if (visited.has(currentId)) break;
-        visited.add(currentId);
-
-        const folder = findItem(currentId);
-
+    while (id !== "root") {
+        const folder = findFile(id);
         if (!folder) break;
 
-        names.unshift(folder.name);
-        currentId = folder.parentId;
+        parts.unshift(folder.name);
+        id = folder.parent;
     }
 
-    return "/ Home" +
-        (names.length ? " / " + names.join(" / ") : "");
-}
-
-function saveFileSystem() {
-    return saveJSON("nexus_files_v1", fileSystem);
-}
-
-function openFolder(id) {
-    if (id !== "root") {
-        const item = findItem(id);
-
-        if (!item || item.type !== "folder") return;
-    }
-
-    currentFolderId = id;
-    renderFiles();
-}
-
-function createFileElement(item) {
-    const button = document.createElement("button");
-
-    button.className = "file-item";
-
-    const icon = document.createElement("span");
-    icon.className = "file-item-icon";
-    icon.textContent = item.type === "folder"
-        ? "📁"
-        : "📄";
-
-    const name = document.createElement("span");
-    name.className = "file-item-name";
-    name.textContent = item.name;
-
-    button.append(icon, name);
-
-    button.addEventListener("click", function() {
-        if (item.type === "folder") {
-            openFolder(item.id);
-        } else {
-            openTextFile(item.id);
-        }
-    });
-
-    button.addEventListener("contextmenu", function(event) {
-        event.preventDefault();
-
-        const action = prompt(
-            'Type "rename" or "delete" for ' + item.name
-        );
-
-        if (!action) return;
-
-        if (action.toLowerCase() === "rename") {
-            renameItem(item.id);
-        }
-
-        if (action.toLowerCase() === "delete") {
-            deleteItem(item.id);
-        }
-    });
-
-    return button;
+    return "Home / " + parts.join(" / ");
 }
 
 function renderFiles() {
-    filesList.replaceChildren();
+    fileList.replaceChildren();
 
-    folderPath.textContent = getFolderPath(currentFolderId);
+    document.getElementById("path").textContent = folderPath();
 
-    const children = getChildren(currentFolderId);
-
-    children.sort(function(a, b) {
-        if (a.type !== b.type) {
-            return a.type === "folder" ? -1 : 1;
-        }
-
-        return a.name.localeCompare(b.name);
+    const children = files.filter(function(file) {
+        return file.parent === currentFolder;
     });
 
-    children.forEach(function(item) {
-        filesList.appendChild(createFileElement(item));
+    children.forEach(function(file) {
+        const button = document.createElement("button");
+        button.className = "file-item";
+
+        const icon = document.createElement("span");
+        icon.textContent = file.type === "folder" ? "📁" : "📄";
+
+        const name = document.createElement("small");
+        name.textContent = file.name;
+
+        button.append(icon, name);
+
+        button.onclick = function() {
+            if (file.type === "folder") {
+                currentFolder = file.id;
+                renderFiles();
+            } else {
+                openTextFile(file.id);
+            }
+        };
+
+        button.oncontextmenu = function(event) {
+            event.preventDefault();
+
+            const action = prompt(
+                'Type "rename" or "delete" for ' + file.name
+            );
+
+            if (action === "rename") renameFile(file.id);
+            if (action === "delete") deleteFile(file.id);
+        };
+
+        fileList.appendChild(button);
     });
 
-    filesStatus.textContent =
-        children.length + " item(s) • Right-click to manage";
-
-    if (children.length === 0) {
-        filesStatus.textContent =
-            "This folder is empty. Create something!";
-    }
+    document.getElementById("fileStatus").textContent =
+        children.length + " items • Right-click to manage";
 }
 
-function nameExists(name, parentId) {
-    return fileSystem.some(function(item) {
-        return item.parentId === parentId &&
-            item.name.toLowerCase() === name.toLowerCase();
-    });
+function newFolder() {
+    createItem("folder");
+}
+
+function newFile() {
+    createItem("file");
 }
 
 function createItem(type) {
-    const name = prompt(
-        type === "folder"
-            ? "New folder name:"
-            : "New text file name:"
-    );
+    const name = prompt("Enter " + type + " name:");
 
-    if (name === null) return;
+    if (!name || !name.trim()) return;
 
     const cleanName = name.trim();
 
-    if (!cleanName) {
-        showToast("Name cannot be empty.");
-        return;
-    }
+    const exists = files.some(function(file) {
+        return file.parent === currentFolder &&
+            file.name.toLowerCase() === cleanName.toLowerCase();
+    });
 
-    if (nameExists(cleanName, currentFolderId)) {
-        showToast("An item with this name already exists.");
+    if (exists) {
+        alert("That name already exists.");
         return;
     }
 
     const item = {
-        id: generateId(),
+        id: createId(),
         name: cleanName,
         type: type,
-        parentId: currentFolderId,
+        parent: currentFolder,
         content: ""
     };
 
-    fileSystem.push(item);
+    files.push(item);
 
-    if (!saveFileSystem()) {
-        fileSystem.pop();
+    if (!saveFiles()) {
+        files.pop();
         return;
     }
 
     renderFiles();
-    showToast("Created " + cleanName);
 }
 
-function renameItem(id) {
-    const item = findItem(id);
+function goBack() {
+    if (currentFolder === "root") return;
 
-    if (!item) return;
+    const folder = findFile(currentFolder);
+    currentFolder = folder ? folder.parent : "root";
 
-    const newName = prompt("Rename item:", item.name);
+    renderFiles();
+}
 
-    if (newName === null) return;
+function renameFile(id) {
+    const file = findFile(id);
+    if (!file) return;
 
-    const cleanName = newName.trim();
+    const name = prompt("Rename:", file.name);
+    if (!name || !name.trim()) return;
 
-    if (!cleanName) return;
+    const cleanName = name.trim();
 
-    const duplicate = fileSystem.some(function(other) {
+    const exists = files.some(function(other) {
         return other.id !== id &&
-            other.parentId === item.parentId &&
+            other.parent === file.parent &&
             other.name.toLowerCase() === cleanName.toLowerCase();
     });
 
-    if (duplicate) {
-        showToast("That name already exists.");
+    if (exists) {
+        alert("That name already exists.");
         return;
     }
 
-    const oldName = item.name;
-    item.name = cleanName;
+    const oldName = file.name;
+    file.name = cleanName;
 
-    if (!saveFileSystem()) {
-        item.name = oldName;
+    if (!saveFiles()) {
+        file.name = oldName;
         return;
     }
 
     renderFiles();
 }
 
-function collectDescendants(id) {
-    const ids = new Set([id]);
+function deleteFile(id) {
+    const file = findFile(id);
+    if (!file) return;
 
+    if (!confirm("Delete " + file.name + "?")) return;
+
+    const ids = new Set([id]);
     let changed = true;
 
     while (changed) {
         changed = false;
 
-        fileSystem.forEach(function(item) {
-            if (ids.has(item.parentId) && !ids.has(item.id)) {
+        files.forEach(function(item) {
+            if (ids.has(item.parent) && !ids.has(item.id)) {
                 ids.add(item.id);
                 changed = true;
             }
         });
     }
 
-    return ids;
-}
+    const previous = files;
 
-function deleteItem(id) {
-    const item = findItem(id);
-
-    if (!item) return;
-
-    const confirmed = confirm(
-        "Delete " + item.name +
-        " and everything inside it?"
-    );
-
-    if (!confirmed) return;
-
-    const idsToDelete = collectDescendants(id);
-
-    const oldFileSystem = fileSystem;
-
-    fileSystem = fileSystem.filter(function(entry) {
-        return !idsToDelete.has(entry.id);
+    files = files.filter(function(item) {
+        return !ids.has(item.id);
     });
 
-    if (!saveFileSystem()) {
-        fileSystem = oldFileSystem;
+    if (!saveFiles()) {
+        files = previous;
         return;
     }
 
-    if (currentFileId && idsToDelete.has(currentFileId)) {
-        currentFileId = null;
+    if (ids.has(currentFile)) {
+        currentFile = null;
         closeApp("editor");
     }
 
     renderFiles();
 }
 
-document.getElementById("newFolderButton")
-    .addEventListener("click", function() {
-        createItem("folder");
-    });
-
-document.getElementById("newFileButton")
-    .addEventListener("click", function() {
-        createItem("file");
-    });
-
-document.getElementById("backFolderButton")
-    .addEventListener("click", function() {
-        if (currentFolderId === "root") return;
-
-        const folder = findItem(currentFolderId);
-
-        openFolder(folder ? folder.parentId : "root");
-    });
-
-document.getElementById("homeFolderButton")
-    .addEventListener("click", function() {
-        openFolder("root");
-    });
-
-document.getElementById("documentsFolderButton")
-    .addEventListener("click", function() {
-        openFolder("documents");
-    });
-
-renderFiles();
-
-/* =====================================
-   TEXT EDITOR
-   ===================================== */
-
-const fileEditor = document.getElementById("fileEditor");
-const editorTitle = document.getElementById("editorTitle");
-const editorStatus = document.getElementById("editorStatus");
+/* Text Editor */
 
 function openTextFile(id) {
-    const file = findItem(id);
-
+    const file = findFile(id);
     if (!file || file.type !== "file") return;
 
-    currentFileId = id;
+    currentFile = id;
 
-    editorTitle.textContent = file.name;
-    fileEditor.value = file.content || "";
-
-    editorStatus.textContent = "Ready";
+    document.getElementById("editorTitle").textContent = file.name;
+    document.getElementById("editorStatus").textContent = "Ready";
+    fileText.value = file.content;
 
     openApp("editor");
 }
 
-fileEditor.addEventListener("input", function() {
-    editorStatus.textContent = "Unsaved changes";
+fileText.addEventListener("input", function() {
+    document.getElementById("editorStatus").textContent =
+        "Unsaved changes";
 });
 
-document.getElementById("saveFileButton")
-    .addEventListener("click", function() {
-        const file = findItem(currentFileId);
+function saveFile() {
+    const file = findFile(currentFile);
+    if (!file) return;
 
-        if (!file) {
-            showToast("No file selected.");
-            return;
-        }
+    const oldContent = file.content;
+    file.content = fileText.value;
 
-        const previousContent = file.content;
-        file.content = fileEditor.value;
+    if (!saveFiles()) {
+        file.content = oldContent;
+        return;
+    }
 
-        if (!saveFileSystem()) {
-            file.content = previousContent;
-            editorStatus.textContent = "Save failed";
-            return;
-        }
-
-        editorStatus.textContent = "Saved successfully";
-        showToast("File saved");
-    });
-
-/* =====================================
-   TERMINAL
-   ===================================== */
-
-const terminalOutput = document.getElementById(
-    "terminalOutput"
-);
-
-const terminalInput = document.getElementById(
-    "terminalInput"
-);
-
-const terminalForm = document.getElementById(
-    "terminalForm"
-);
-
-function printTerminal(message) {
-    const line = document.createElement("div");
-    line.textContent = message;
-
-    terminalOutput.appendChild(line);
-
-    terminalOutput.scrollTop = terminalOutput.scrollHeight;
+    document.getElementById("editorStatus").textContent = "Saved";
 }
 
-function handleTerminalCommand(rawCommand) {
-    const trimmed = rawCommand.trim();
+/* Terminal */
 
-    if (!trimmed) return;
+const output = document.getElementById("output");
+const command = document.getElementById("command");
 
-    printTerminal("nexus@home:~$ " + trimmed);
+function printLine(text) {
+    output.textContent += "\n" + text;
+    output.scrollTop = output.scrollHeight;
+}
 
-    const firstSpace = trimmed.indexOf(" ");
+document.getElementById("terminalForm").onsubmit = function(event) {
+    event.preventDefault();
 
-    const command = (
-        firstSpace === -1
-            ? trimmed
-            : trimmed.slice(0, firstSpace)
+    const text = command.value.trim();
+    command.value = "";
+
+    if (!text) return;
+
+    printLine("NexusOS> " + text);
+
+    const space = text.indexOf(" ");
+    const action = (
+        space === -1 ? text : text.slice(0, space)
     ).toLowerCase();
 
-    const argument = firstSpace === -1
-        ? ""
-        : trimmed.slice(firstSpace + 1).trim();
+    const argument = space === -1 ? "" : text.slice(space + 1);
 
-    switch (command) {
-
+    switch (action) {
         case "help":
-            printTerminal(
-                "Available commands:\n" +
-                "help      Show commands\n" +
-                "clear     Clear terminal\n" +
-                "date      Display date\n" +
-                "time      Display time\n" +
-                "whoami    Display user\n" +
-                "echo      Print text\n" +
-                "ls        List current folder\n" +
-                "pwd       Show folder path\n" +
-                "open      Open an application\n" +
-                "about     About NexusOS\n" +
-                "version   Show version"
-            );
+            printLine("help, clear, date, time, ls, echo, version");
             break;
 
         case "clear":
-            terminalOutput.replaceChildren();
+            output.textContent = "";
             break;
 
         case "date":
-            printTerminal(new Date().toDateString());
+            printLine(new Date().toDateString());
             break;
 
         case "time":
-            printTerminal(new Date().toLocaleTimeString());
-            break;
-
-        case "whoami":
-            printTerminal("nexus-user");
-            break;
-
-        case "echo":
-            printTerminal(argument);
+            printLine(new Date().toLocaleTimeString());
             break;
 
         case "ls":
-            printTerminal(
-                getChildren(currentFolderId)
-                    .map(item => item.name)
+            printLine(
+                files.filter(file => file.parent === currentFolder)
+                    .map(file => file.name)
                     .join("\n") || "(empty)"
             );
             break;
 
-        case "pwd":
-            printTerminal(getFolderPath(currentFolderId));
-            break;
-
-        case "open":
-            if (windows.has(argument.toLowerCase())) {
-                openApp(argument.toLowerCase());
-            } else {
-                printTerminal(
-                    "Unknown application. Try: files, notes, settings."
-                );
-            }
-            break;
-
-        case "about":
-            printTerminal(
-                "NexusOS is a browser-based desktop environment."
-            );
+        case "echo":
+            printLine(argument);
             break;
 
         case "version":
-            printTerminal("NexusOS v1.0");
+            printLine("NexusOS 1.0");
             break;
 
         default:
-            printTerminal(
-                "Command not found: " + command +
-                "\nType 'help' for commands."
-            );
+            printLine("Unknown command");
     }
-}
+};
 
-terminalForm.addEventListener("submit", function(event) {
-    event.preventDefault();
+/* Calculator */
 
-    const command = terminalInput.value;
+const calcDisplay = document.getElementById("calcDisplay");
 
-    terminalInput.value = "";
+let firstNumber = null;
+let operation = null;
+let startNewNumber = false;
 
-    handleTerminalCommand(command);
-});
+function calcNumber(value) {
+    if (startNewNumber) {
+        calcDisplay.value = "0";
+        startNewNumber = false;
+    }
 
-/* =====================================
-   CALCULATOR
-   ===================================== */
+    if (value === "." && calcDisplay.value.includes(".")) {
+        return;
+    }
 
-const calculatorDisplay = document.getElementById(
-    "calculatorDisplay"
-);
-
-let calculatorValue = "0";
-let storedNumber = null;
-let pendingOperator = null;
-let waitingForNextNumber = false;
-
-function updateCalculatorDisplay() {
-    calculatorDisplay.value = calculatorValue;
-}
-
-function appendDigit(digit) {
-    if (waitingForNextNumber) {
-        calculatorValue = digit;
-        waitingForNextNumber = false;
+    if (value === ".") {
+        calcDisplay.value += ".";
+    } else if (calcDisplay.value === "0" ||
+               calcDisplay.value === "Error") {
+        calcDisplay.value = value;
     } else {
-        calculatorValue = calculatorValue === "0"
-            ? digit
-            : calculatorValue + digit;
-    }
-
-    updateCalculatorDisplay();
-}
-
-function appendDecimal() {
-    if (waitingForNextNumber) {
-        calculatorValue = "0.";
-        waitingForNextNumber = false;
-    } else if (!calculatorValue.includes(".")) {
-        calculatorValue += ".";
-    }
-
-    updateCalculatorDisplay();
-}
-
-function calculate(a, b, operator) {
-    switch (operator) {
-        case "add":
-            return a + b;
-
-        case "subtract":
-            return a - b;
-
-        case "multiply":
-            return a * b;
-
-        case "divide":
-            return b === 0 ? NaN : a / b;
-
-        default:
-            return b;
+        calcDisplay.value += value;
     }
 }
 
-function handleCalculatorInput(action) {
-    if (/^\d$/.test(action)) {
-        appendDigit(action);
-        return;
-    }
-
-    if (action === "decimal") {
-        appendDecimal();
-        return;
-    }
-
-    if (action === "clear") {
-        calculatorValue = "0";
-        storedNumber = null;
-        pendingOperator = null;
-        waitingForNextNumber = false;
-    }
-
-    if (action === "backspace") {
-        calculatorValue = calculatorValue.length > 1
-            ? calculatorValue.slice(0, -1)
-            : "0";
-    }
-
-    if (action === "sign") {
-        calculatorValue = String(
-            Number(calculatorValue) * -1
-        );
-    }
-
-    if (action === "percent") {
-        calculatorValue = String(
-            Number(calculatorValue) / 100
-        );
-    }
-
-    if (["add", "subtract", "multiply", "divide"]
-        .includes(action)) {
-
-        if (pendingOperator !== null && !waitingForNextNumber) {
-            const result = calculate(
-                storedNumber,
-                Number(calculatorValue),
-                pendingOperator
-            );
-
-            calculatorValue = String(result);
-        }
-
-        storedNumber = Number(calculatorValue);
-        pendingOperator = action;
-        waitingForNextNumber = true;
-    }
-
-    if (action === "equals") {
-        if (pendingOperator !== null && storedNumber !== null) {
-            const result = calculate(
-                storedNumber,
-                Number(calculatorValue),
-                pendingOperator
-            );
-
-            calculatorValue = Number.isFinite(result)
-                ? String(Number(result.toPrecision(12)))
-                : "Error";
-
-            storedNumber = null;
-            pendingOperator = null;
-            waitingForNextNumber = true;
-        }
-    }
-
-    updateCalculatorDisplay();
+function calcOperator(op) {
+    firstNumber = Number(calcDisplay.value);
+    operation = op;
+    startNewNumber = true;
 }
 
-document.querySelectorAll("[data-calc]").forEach(
-    function(button) {
-        button.addEventListener("click", function() {
-            handleCalculatorInput(button.dataset.calc);
-        });
-    }
-);
+function calcEquals() {
+    if (firstNumber === null || !operation) return;
 
-/* =====================================
-   THEMES AND SETTINGS
-   ===================================== */
+    const secondNumber = Number(calcDisplay.value);
+    let result;
 
-const availableThemes = [
-    "ocean",
-    "sunset",
-    "forest",
-    "midnight"
-];
-
-function applyTheme(theme) {
-    if (!availableThemes.includes(theme)) {
-        return;
+    switch (operation) {
+        case "+": result = firstNumber + secondNumber; break;
+        case "-": result = firstNumber - secondNumber; break;
+        case "*": result = firstNumber * secondNumber; break;
+        case "/": result = secondNumber === 0
+            ? NaN : firstNumber / secondNumber; break;
     }
 
-    availableThemes.forEach(function(name) {
-        desktop.classList.remove("theme-" + name);
-    });
+    calcDisplay.value = Number.isFinite(result)
+        ? String(Number(result.toPrecision(12)))
+        : "Error";
 
-    desktop.classList.add("theme-" + theme);
-
-    try {
-        localStorage.setItem("nexus_theme", theme);
-    } catch (error) {
-        console.warn("Could not save theme:", error);
-    }
-
-    showToast("Theme changed to " + theme);
+    firstNumber = null;
+    operation = null;
+    startNewNumber = true;
 }
 
-document.querySelectorAll("[data-theme]").forEach(
-    function(button) {
-        button.addEventListener("click", function() {
-            applyTheme(button.dataset.theme);
-        });
-    }
-);
-
-const savedTheme = localStorage.getItem("nexus_theme");
-
-if (availableThemes.includes(savedTheme)) {
-    applyTheme(savedTheme);
+function calcClear() {
+    calcDisplay.value = "0";
+    firstNumber = null;
+    operation = null;
+    startNewNumber = false;
 }
 
-/* =====================================
-   SYSTEM INITIALIZATION
-   ===================================== */
+/* Start NexusOS */
 
-function initializeNexusOS() {
-    const welcome = getWindow("welcome");
-
-    welcome.classList.remove("hidden");
-    focusWindow(welcome);
-
-    renderTaskbar();
-    updateClock();
-
-    console.log("NexusOS v1.0 initialized successfully.");
-}
-
-initializeNexusOS();
-
-
+renderFiles();
+updateTaskbar();
+openApp("files");
