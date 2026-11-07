@@ -1,156 +1,356 @@
 
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+
     <title>NexusOS</title>
+
     <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
+
 <div id="desktop">
 
-    <!-- Desktop Icons -->
+    <!-- DESKTOP ICONS -->
+
     <div class="desktop-icons">
-        <button onclick="openApp('files')">📁<span>My Files</span></button>
-        <button onclick="openApp('notes')">📝<span>Notes</span></button>
-        <button onclick="openApp('terminal')">⌨<span>Terminal</span></button>
-        <button onclick="openApp('calculator')">▦<span>Calculator</span></button>
+
+        <button data-open="files">
+            <span>▣</span>
+            My Computer
+        </button>
+
+        <button data-open="notes">
+            <span>▤</span>
+            Notes
+        </button>
+
+        <button data-open="terminal">
+            <span>▸_</span>
+            Terminal
+        </button>
+
+        <button data-open="calculator">
+            <span>▦</span>
+            Calculator
+        </button>
+
     </div>
 
-    <!-- File Explorer -->
-    <div class="window" id="files">
+
+    <!-- FILE EXPLORER -->
+
+    <section class="window"
+             id="filesWindow"
+             data-window="files">
+
         <div class="titlebar">
-            <span>My Files</span>
-            <div>
-                <button onclick="minimizeApp('files')">_</button>
-                <button onclick="closeApp('files')">×</button>
+
+            <span>My Computer</span>
+
+            <div class="window-buttons">
+                <button data-minimize="files">_</button>
+                <button data-close="files">×</button>
             </div>
+
+        </div>
+
+        <div class="menubar">
+            File Explorer
         </div>
 
         <div class="toolbar">
-            <button onclick="goBack()">Back</button>
-            <button onclick="newFolder()">New Folder</button>
-            <button onclick="newFile()">New File</button>
+
+            <button id="backButton">Back</button>
+            <button id="homeButton">Home</button>
+
+            <button id="newFolderButton">
+                New Folder
+            </button>
+
+            <button id="newFileButton">
+                New File
+            </button>
+
         </div>
 
-        <div id="path">Home</div>
+        <div class="address-bar">
+
+            <span>Address:</span>
+
+            <input id="folderPath"
+                   value="Home"
+                   readonly>
+
+        </div>
+
+        <div class="file-tools">
+
+            <input id="fileSearch"
+                   type="search"
+                   placeholder="Search this folder">
+
+            <select id="fileSort">
+                <option value="name">Sort by name</option>
+                <option value="type">Sort by type</option>
+            </select>
+
+        </div>
+
+        <div class="toolbar">
+
+            <button id="exportFilesButton">
+                Export Backup
+            </button>
+
+            <button id="importFilesButton">
+                Import Backup
+            </button>
+
+            <input id="backupFileInput"
+                   type="file"
+                   accept=".json,application/json"
+                   hidden>
+
+        </div>
+
         <div id="fileList"></div>
-        <div class="statusbar" id="fileStatus">Ready</div>
-    </div>
 
-    <!-- Text Editor -->
-    <div class="window hidden" id="editor">
-        <div class="titlebar">
-            <span id="editorTitle">Text Editor</span>
-            <div>
-                <button onclick="minimizeApp('editor')">_</button>
-                <button onclick="closeApp('editor')">×</button>
-            </div>
+        <div class="statusbar">
+            <span id="fileStatus">Ready</span>
+            <span>Right-click files to manage</span>
         </div>
 
-        <textarea id="fileText" placeholder="Write here..."></textarea>
+    </section>
+
+
+    <!-- TEXT EDITOR -->
+
+    <section class="window hidden"
+             id="editorWindow"
+             data-window="editor">
+
+        <div class="titlebar">
+
+            <span id="editorTitle">
+                Text Editor
+            </span>
+
+            <div class="window-buttons">
+                <button data-minimize="editor">_</button>
+                <button data-close="editor">×</button>
+            </div>
+
+        </div>
+
+        <textarea id="fileEditor"
+                  placeholder="Start typing..."
+                  spellcheck="false"></textarea>
 
         <div class="toolbar">
-            <button onclick="saveFile()">Save File</button>
-            <span id="editorStatus">Ready</span>
-        </div>
-    </div>
 
-    <!-- Notes -->
-    <div class="window hidden" id="notes">
+            <button id="saveFileButton">
+                Save
+            </button>
+
+            <span id="editorStatus">
+                Ready
+            </span>
+
+        </div>
+
+    </section>
+
+
+    <!-- NOTES -->
+
+    <section class="window hidden"
+             id="notesWindow"
+             data-window="notes">
+
         <div class="titlebar">
-            <span>Notes</span>
-            <div>
-                <button onclick="minimizeApp('notes')">_</button>
-                <button onclick="closeApp('notes')">×</button>
+
+            <span>Nexus Notes</span>
+
+            <div class="window-buttons">
+                <button data-minimize="notes">_</button>
+                <button data-close="notes">×</button>
             </div>
+
+        </div>
+
+        <div class="notes-toolbar">
+
+            <input id="noteTitle"
+                   type="text"
+                   placeholder="Note title">
+
+            <button id="clearNotesButton">
+                Clear
+            </button>
+
         </div>
 
         <textarea id="notesText"
                   placeholder="Write your notes here..."></textarea>
-        <div class="statusbar" id="notesStatus">Autosave enabled</div>
-    </div>
 
-    <!-- Terminal -->
-    <div class="window hidden" id="terminal">
-        <div class="titlebar">
-            <span>Nexus Terminal</span>
-            <div>
-                <button onclick="minimizeApp('terminal')">_</button>
-                <button onclick="closeApp('terminal')">×</button>
-            </div>
+        <div class="statusbar">
+
+            <span id="wordCount">0 words</span>
+
+            <span id="notesStatus">
+                Autosave enabled
+            </span>
+
         </div>
 
-        <div id="terminalScreen">
-            <div id="output">NexusOS Terminal
-Type help to see commands.</div>
+    </section>
+
+
+    <!-- TERMINAL -->
+
+    <section class="window hidden"
+             id="terminalWindow"
+             data-window="terminal">
+
+        <div class="titlebar">
+
+            <span>Nexus Terminal</span>
+
+            <div class="window-buttons">
+                <button data-minimize="terminal">_</button>
+                <button data-close="terminal">×</button>
+            </div>
+
+        </div>
+
+        <div class="terminal-body">
+
+            <div id="terminalOutput">
+NexusOS Terminal
+Type help for available commands.
+            </div>
 
             <form id="terminalForm">
-                <span>NexusOS&gt;</span>
-                <input id="command" autocomplete="off">
-            </form>
-        </div>
-    </div>
 
-    <!-- Calculator -->
-    <div class="window hidden" id="calculator">
+                <span>NexusOS&gt;</span>
+
+                <input id="terminalInput"
+                       type="text"
+                       autocomplete="off"
+                       spellcheck="false">
+
+            </form>
+
+        </div>
+
+    </section>
+
+
+    <!-- CALCULATOR -->
+
+    <section class="window hidden"
+             id="calculatorWindow"
+             data-window="calculator">
+
         <div class="titlebar">
+
             <span>Calculator</span>
-            <div>
-                <button onclick="minimizeApp('calculator')">_</button>
-                <button onclick="closeApp('calculator')">×</button>
+
+            <div class="window-buttons">
+                <button data-minimize="calculator">_</button>
+                <button data-close="calculator">×</button>
             </div>
+
         </div>
 
         <div class="calculator-body">
-            <input id="calcDisplay" value="0" readonly>
 
-            <div class="calc-grid">
-                <button onclick="calcClear()">C</button>
-                <button onclick="calcOperator('/')">÷</button>
-                <button onclick="calcOperator('*')">×</button>
-                <button onclick="calcOperator('-')">−</button>
+            <input id="calcDisplay"
+                   type="text"
+                   value="0"
+                   readonly>
 
-                <button onclick="calcNumber('7')">7</button>
-                <button onclick="calcNumber('8')">8</button>
-                <button onclick="calcNumber('9')">9</button>
-                <button onclick="calcOperator('+')">+</button>
+            <div class="calculator-grid">
 
-                <button onclick="calcNumber('4')">4</button>
-                <button onclick="calcNumber('5')">5</button>
-                <button onclick="calcNumber('6')">6</button>
-                <button onclick="calcEquals()">=</button>
+                <button data-calc="clear">C</button>
+                <button data-calc="back">←</button>
+                <button data-calc="sign">±</button>
+                <button data-calc="divide">÷</button>
 
-                <button onclick="calcNumber('1')">1</button>
-                <button onclick="calcNumber('2')">2</button>
-                <button onclick="calcNumber('3')">3</button>
-                <button onclick="calcNumber('0')">0</button>
+                <button data-calc="7">7</button>
+                <button data-calc="8">8</button>
+                <button data-calc="9">9</button>
+                <button data-calc="multiply">×</button>
 
-                <button onclick="calcNumber('.')">.</button>
+                <button data-calc="4">4</button>
+                <button data-calc="5">5</button>
+                <button data-calc="6">6</button>
+                <button data-calc="subtract">−</button>
+
+                <button data-calc="1">1</button>
+                <button data-calc="2">2</button>
+                <button data-calc="3">3</button>
+                <button data-calc="add">+</button>
+
+                <button data-calc="percent">%</button>
+                <button data-calc="0">0</button>
+                <button data-calc="decimal">.</button>
+                <button data-calc="equals">=</button>
+
             </div>
+
         </div>
-    </div>
 
-    <!-- Start Menu -->
+    </section>
+
+
+    <!-- START MENU -->
+
     <div id="startMenu" class="hidden">
-        <strong>NexusOS</strong>
-        <button onclick="openApp('files')">My Files</button>
-        <button onclick="openApp('notes')">Notes</button>
-        <button onclick="openApp('terminal')">Terminal</button>
-        <button onclick="openApp('calculator')">Calculator</button>
+
+        <div class="start-heading">
+            NexusOS
+        </div>
+
+        <button data-open="files">My Computer</button>
+        <button data-open="notes">Notes</button>
+        <button data-open="terminal">Terminal</button>
+        <button data-open="calculator">Calculator</button>
+
     </div>
 
-    <!-- Taskbar -->
-    <div id="taskbar">
-        <button id="startButton">Start</button>
-        <div id="taskApps"></div>
+
+    <!-- TASKBAR -->
+
+    <footer id="taskbar">
+
+        <button id="startButton">
+            Start
+        </button>
+
+        <button id="showDesktopButton"
+                title="Show Desktop">
+            ▣
+        </button>
+
+        <div id="taskbarApps"></div>
+
         <span id="clock">00:00</span>
-    </div>
+
+    </footer>
+
+    <div id="notification" class="hidden"></div>
 
 </div>
 
 <script src="script.js"></script>
 </body>
 </html>
+
+

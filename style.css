@@ -1,17 +1,28 @@
 
+/* NEXUSOS CLASSIC STYLE */
+
 * {
     box-sizing: border-box;
 }
 
+html,
 body {
     margin: 0;
+    width: 100%;
+    height: 100%;
+}
+
+body {
     font-family: Tahoma, Arial, sans-serif;
     font-size: 13px;
     color: #222;
     overflow: hidden;
 }
 
-button, input, textarea {
+button,
+input,
+textarea,
+select {
     font: inherit;
 }
 
@@ -23,30 +34,43 @@ button {
     display: none !important;
 }
 
-/* Desktop */
+/* DESKTOP */
 
 #desktop {
-    position: relative;
     width: 100vw;
     height: 100vh;
+    position: relative;
+    overflow: hidden;
     background: #c6d2df;
 }
+
+/* ICONS */
 
 .desktop-icons {
     position: absolute;
     top: 20px;
     left: 15px;
+
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    gap: 10px;
 }
 
 .desktop-icons button {
-    width: 90px;
-    padding: 10px 4px;
-    border: 1px solid transparent;
+    width: 95px;
+    min-height: 75px;
+
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+
     background: transparent;
-    font-size: 29px;
+    border: 1px solid transparent;
+
+    color: #222;
+    font-size: 12px;
 }
 
 .desktop-icons button:hover {
@@ -55,162 +79,358 @@ button {
 }
 
 .desktop-icons span {
-    display: block;
-    margin-top: 5px;
-    font-size: 12px;
+    font-size: 28px;
 }
 
-/* Application Windows */
+/* WINDOWS */
 
 .window {
     position: absolute;
+
     top: 90px;
     left: 190px;
-    width: 560px;
+
+    width: 580px;
+
     max-width: calc(100vw - 20px);
+
     background: #eeeeee;
+
     border: 1px solid #777;
     box-shadow: 3px 4px 0 #8d99a7;
+
     z-index: 10;
+}
+
+.window.active {
+    border-color: #344c6e;
 }
 
 .titlebar {
     height: 32px;
-    background: #344c6e;
-    color: white;
-    padding: 4px 7px 4px 10px;
+
     display: flex;
     align-items: center;
     justify-content: space-between;
+
+    padding: 4px 7px 4px 10px;
+
+    background: #344c6e;
+    color: white;
+
     font-weight: bold;
+
     cursor: move;
     user-select: none;
     touch-action: none;
 }
 
-.titlebar button {
+.window:not(.active) .titlebar {
+    background: #788698;
+}
+
+.window-buttons {
+    display: flex;
+    gap: 3px;
+}
+
+.window-buttons button {
     width: 25px;
     height: 23px;
-    border: 1px solid #777;
+
+    padding: 0;
+
     background: #e5e5e5;
+
+    border: 1px solid #777;
+
+    color: #222;
+}
+
+.window-buttons button:hover {
+    background: white;
+}
+
+/* TOOLBAR */
+
+.menubar {
+    padding: 7px 10px;
+
+    background: #eeeeee;
+
+    border-bottom: 1px solid #aaa;
 }
 
 .toolbar {
-    padding: 8px;
-    background: #e5e5e5;
-    border-bottom: 1px solid #aaa;
     display: flex;
     align-items: center;
+    flex-wrap: wrap;
+
     gap: 7px;
+
+    padding: 8px;
+
+    background: #e5e5e5;
+
+    border-bottom: 1px solid #aaa;
 }
 
-.toolbar button {
+.toolbar button,
+.notes-toolbar button {
     padding: 5px 10px;
+
     border: 1px solid #999;
+
     background: #f5f5f5;
 }
 
-.toolbar button:hover {
+.toolbar button:hover,
+.notes-toolbar button:hover {
     background: white;
 }
 
-.statusbar {
-    padding: 6px 10px;
-    border-top: 1px solid #aaa;
-    background: #e5e5e5;
-    color: #555;
-    font-size: 11px;
+/* FILE EXPLORER */
+
+#filesWindow {
+    width: 700px;
+    top: 70px;
+    left: 180px;
 }
 
-/* File Explorer */
+.address-bar {
+    display: flex;
+    align-items: center;
 
-#files {
-    width: 670px;
-}
+    gap: 8px;
 
-#path {
-    padding: 8px;
-    background: white;
+    padding: 7px 10px;
+
+    background: #f5f5f5;
+
     border-bottom: 1px solid #ccc;
 }
 
-#fileList {
-    min-height: 270px;
-    max-height: 55vh;
-    overflow-y: auto;
-    padding: 15px;
+#folderPath {
+    flex: 1;
+    min-width: 0;
+
+    padding: 6px;
+
+    border: 1px solid #999;
+
     background: white;
+}
+
+.file-tools {
+    display: flex;
+    align-items: center;
+
+    gap: 8px;
+
+    padding: 8px;
+
+    background: #e8e8e8;
+
+    border-bottom: 1px solid #aaa;
+}
+
+#fileSearch {
+    flex: 1;
+    min-width: 0;
+
+    padding: 7px;
+
+    border: 1px solid #999;
+
+    background: white;
+}
+
+#fileSort {
+    padding: 7px;
+
+    border: 1px solid #999;
+
+    background: white;
+}
+
+#fileList {
+    min-height: 280px;
+    max-height: 55vh;
+
+    overflow-y: auto;
+
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+    grid-template-columns: repeat(
+        auto-fill,
+        minmax(110px, 1fr)
+    );
+
     gap: 10px;
+
+    padding: 15px;
+
+    background: white;
+
     align-content: start;
 }
 
 .file-item {
-    min-height: 85px;
+    min-height: 90px;
+
     padding: 10px 5px;
+
     border: 1px solid transparent;
+
     background: white;
+
     text-align: center;
+
     overflow-wrap: anywhere;
 }
 
 .file-item:hover {
     background: #e0e9f5;
+
     border-color: #8ca2bb;
 }
 
 .file-item span {
     display: block;
-    font-size: 27px;
-    margin-bottom: 5px;
+
+    font-size: 28px;
+
+    margin-bottom: 7px;
 }
 
-/* Text Editor and Notes */
+.file-item small {
+    font-size: 12px;
+}
 
-#editor, #notes {
-    left: 280px;
+.statusbar {
+    display: flex;
+    justify-content: space-between;
+
+    gap: 10px;
+
+    padding: 6px 10px;
+
+    border-top: 1px solid #aaa;
+
+    background: #e5e5e5;
+
+    color: #555;
+
+    font-size: 11px;
+}
+
+/* TEXT EDITOR */
+
+#editorWindow {
+    width: 580px;
     top: 120px;
+    left: 270px;
 }
 
-#fileText, #notesText {
+#fileEditor {
     display: block;
+
     width: 100%;
-    height: 310px;
+    height: 320px;
+
+    padding: 12px;
+
     border: none;
     outline: none;
-    resize: vertical;
-    padding: 12px;
+
     background: white;
+
     color: #222;
+
     font-family: "Courier New", monospace;
     font-size: 14px;
     line-height: 1.5;
-    user-select: text;
+
+    resize: vertical;
 }
 
-/* Terminal */
+/* NOTES */
 
-#terminal {
-    width: 590px;
-    left: 260px;
-    top: 140px;
+#notesWindow {
+    width: 550px;
+    top: 115px;
+    left: 290px;
 }
 
-#terminalScreen {
-    height: 300px;
+.notes-toolbar {
+    display: flex;
+    gap: 8px;
+
+    padding: 8px;
+
+    background: #e5e5e5;
+}
+
+#noteTitle {
+    flex: 1;
+    min-width: 0;
+
+    padding: 6px;
+
+    border: 1px solid #999;
+}
+
+#notesText {
+    display: block;
+
+    width: 100%;
+    height: 320px;
+
     padding: 12px;
-    background: #171717;
-    color: #e0e0e0;
+
+    border: none;
+    outline: none;
+
+    background: white;
+
     font-family: "Courier New", monospace;
+    font-size: 14px;
+    line-height: 1.6;
+
+    resize: vertical;
+}
+
+/* TERMINAL */
+
+#terminalWindow {
+    width: 600px;
+    top: 135px;
+    left: 260px;
+}
+
+.terminal-body {
+    height: 320px;
+
     display: flex;
     flex-direction: column;
+
+    padding: 12px;
+
+    background: #171717;
+
+    color: #e0e0e0;
+
+    font-family: "Courier New", monospace;
 }
 
-#output {
+#terminalOutput {
     flex: 1;
+
     overflow-y: auto;
+
     white-space: pre-wrap;
+    overflow-wrap: anywhere;
+
+    line-height: 1.5;
 }
 
 #terminalForm {
@@ -218,20 +438,25 @@ button {
     gap: 8px;
 }
 
-#command {
+#terminalInput {
     flex: 1;
     min-width: 0;
+
     background: transparent;
     color: white;
+
     border: none;
     outline: none;
+
     font-family: inherit;
 }
 
-/* Calculator */
+/* CALCULATOR */
 
-#calculator {
-    width: 280px;
+#calculatorWindow {
+    width: 290px;
+
+    top: 145px;
     left: 350px;
 }
 
@@ -241,55 +466,82 @@ button {
 
 #calcDisplay {
     width: 100%;
+
     padding: 10px;
+
     margin-bottom: 10px;
-    text-align: right;
-    font-size: 23px;
-    border: 1px solid #888;
+
     background: white;
+
+    border: 1px solid #888;
+
+    font-size: 25px;
+
+    text-align: right;
 }
 
-.calc-grid {
+.calculator-grid {
     display: grid;
+
     grid-template-columns: repeat(4, 1fr);
-    gap: 5px;
+
+    gap: 6px;
 }
 
-.calc-grid button {
-    height: 42px;
+.calculator-grid button {
+    height: 43px;
+
     border: 1px solid #aaa;
+
     background: #fafafa;
+
+    font-size: 17px;
 }
 
-.calc-grid button:hover {
+.calculator-grid button:hover {
     background: #dce6f0;
 }
 
-/* Start Menu */
+/* START MENU */
 
 #startMenu {
     position: absolute;
+
     left: 4px;
     bottom: 43px;
-    width: 210px;
+
+    width: 220px;
+
     background: #eeeeee;
+
     border: 1px solid #777;
-    z-index: 1000;
+
+    box-shadow: 2px 2px 0 #999;
+
+    z-index: 10000;
 }
 
-#startMenu strong {
-    display: block;
+.start-heading {
     padding: 12px;
+
     background: #344c6e;
+
     color: white;
+
+    font-weight: bold;
 }
 
 #startMenu button {
     display: block;
+
     width: 100%;
-    padding: 10px;
+
+    padding: 11px 12px;
+
     border: none;
+
     background: transparent;
+
     text-align: left;
 }
 
@@ -297,52 +549,92 @@ button {
     background: #d0dbe8;
 }
 
-/* Taskbar */
+/* TASKBAR */
 
 #taskbar {
     position: absolute;
+
     bottom: 0;
     left: 0;
+
     width: 100%;
     height: 43px;
-    background: #c5cbd3;
-    border-top: 1px solid #888;
+
     display: flex;
     align-items: center;
+
     gap: 5px;
+
     padding: 5px;
-    z-index: 999;
+
+    background: #c5cbd3;
+
+    border-top: 1px solid #888;
+
+    z-index: 9999;
 }
 
-#startButton {
-    padding: 7px 16px;
+#startButton,
+#showDesktopButton {
+    padding: 7px 13px;
+
     border: 1px solid #777;
+
     background: #e7e7e7;
+
     font-weight: bold;
 }
 
-#taskApps {
+#taskbarApps {
     flex: 1;
+
     display: flex;
+
     gap: 5px;
+
+    min-width: 0;
+
     overflow-x: auto;
 }
 
-#taskApps button {
-    padding: 7px 12px;
-    background: #e7e7e7;
+#taskbarApps button {
+    padding: 7px 11px;
+
     border: 1px solid #999;
+
+    background: #e7e7e7;
+
     white-space: nowrap;
 }
 
-#taskApps button.active {
+#taskbarApps button.active {
     background: #a9bfda;
 }
 
 #clock {
     padding: 7px;
+
     white-space: nowrap;
 }
+
+/* NOTIFICATION */
+
+#notification {
+    position: absolute;
+
+    right: 12px;
+    bottom: 55px;
+
+    padding: 12px 16px;
+
+    background: #fffef1;
+
+    border: 1px solid #999;
+
+    z-index: 20000;
+}
+
+/* SMALL SCREENS */
 
 @media (max-width: 700px) {
     .window {
@@ -350,4 +642,13 @@ button {
         top: 50px !important;
         width: calc(100vw - 20px) !important;
     }
+
+    .file-tools {
+        flex-wrap: wrap;
+    }
+
+    #fileSearch {
+        flex-basis: 100%;
+    }
 }
+

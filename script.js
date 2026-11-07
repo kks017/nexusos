@@ -1,164 +1,398 @@
 
 "use strict";
 
-/* NexusOS 1.0 */
+/* ========================================
+   NEXUSOS v1.1 - MAIN JAVASCRIPT
+   ======================================== */
 
-const apps = ["files", "editor", "notes", "terminal", "calculator"];
-const taskApps = document.getElementById("taskApps");
+/* GENERAL VARIABLES */
+
+const desktop = document.getElementById("desktop");
 const startMenu = document.getElementById("startMenu");
+const taskbarApps = document.getElementById("taskbarApps");
+const notification = document.getElementById("notification");
 
-let topWindow = 20;
+const appNames = {
+    files: "My Computer",
+    editor: "Text Editor",
+    notes: "Notes",
+    terminal: "Terminal",
+    calculator: "Calculator"
+};
 
-/* Window Manager */
+let highestWindow = 20;
+let notificationTimer = null;
 
-function openApp(name) {
-    const win = document.getElementById(name);
+/* ========================================
+   HELPER FUNCTIONS
+   ======================================== */
 
-    win.classList.remove("hidden");
-    focusWindow(win);
-    startMenu.classList.add("hidden");
+function getElement(id) {
+    return document.getElementById(id);
+}
+
+function showMessage(message) {
+    notification.textContent = message;
+    notification.classList.remove("hidden");
+
+    clearTimeout(notificationTimer);
+
+    notificationTimer = setTimeout(function() {
+        notification.classList.add("hidden");
+    }, 2500);
+}
+
+function loadData(key, fallback) {
+    try {
+        const saved = localStorage.getItem(key);
+
+        if (saved === null) {
+            return fallback;
+        }
+
+        return JSON.parse(saved);
+    } catch (error) {
+        console.error("Load error:", error);
+        return fallback;
+    }
+}
+
+function saveData(key, data) {
+    try {
+        localStorage.setItem(
+            key,
+            JSON.stringify(data)
+        );
+
+        return true;
+    } catch (error) {
+        console.error("Save error:", error);
+        showMessage("Unable to save data.");
+        return false;
+    }
+}
+
+/* ========================================
+   WINDOW MANAGER
+   ======================================== */
+
+function getWindow(name) {
+    return getElement(name + "Window");
+}
+
+function focusWindow(win) {
+    highestWindow++;
+
+    document.querySelectorAll(".window")
+        .forEach(function(other) {
+            other.classList.remove("active");
+        });
+
+    win.classList.add("active");
+    win.style.zIndex = highestWindow;
+
     updateTaskbar();
 }
 
+function openApp(name) {
+    const win = getWindow(name);
+
+    if (!win) return;
+
+    win.classList.remove("hidden");
+
+    focusWindow(win);
+
+    startMenu.classList.add("hidden");
+
+    if (name === "terminal") {
+        getElement("terminalInput").focus();
+    }
+}
+
 function closeApp(name) {
-    document.getElementById(name).classList.add("hidden");
+    const win = getWindow(name);
+
+    if (!win) return;
+
+    if (name === "editor" && hasUnsavedFile()) {
+        if (!confirm("Discard unsaved file changes?")) {
+            return;
+        }
+    }
+
+    win.classList.add("hidden");
+    win.classList.remove("active");
+
     updateTaskbar();
 }
 
 function minimizeApp(name) {
-    closeApp(name);
-}
+    const win = getWindow(name);
 
-function focusWindow(win) {
-    topWindow++;
+    if (!win) return;
 
-    document.querySelectorAll(".window").forEach(function(w) {
-        w.classList.remove("active");
-    });
+    win.classList.add("hidden");
+    win.classList.remove("active");
 
-    win.classList.add("active");
-    win.style.zIndex = topWindow;
+    updateTaskbar();
 }
 
 function updateTaskbar() {
-    taskApps.replaceChildren();
+    taskbarApps.replaceChildren();
 
-    apps.forEach(function(name) {
-        const win = document.getElementById(name);
+    Object.keys(appNames).forEach(function(name) {
+        const win = getWindow(name);
+
         const button = document.createElement("button");
 
-        button.textContent = name;
+        button.textContent = appNames[name];
 
-        if (!win.classList.contains("hidden")) {
+        if (
+            !win.classList.contains("hidden") &&
+            win.classList.contains("active")
+        ) {
             button.classList.add("active");
         }
 
-        button.onclick = function() {
-            if (win.classList.contains("hidden")) {
-                openApp(name);
-            } else {
+        button.addEventListener("click", function() {
+            if (
+                !win.classList.contains("hidden") &&
+                win.classList.contains("active")
+            ) {
                 minimizeApp(name);
+            } else {
+                openApp(name);
             }
-        };
+        });
 
-        taskApps.appendChild(button);
+        taskbarApps.appendChild(button);
     });
 }
 
-/* Drag Windows */
+/* WINDOW BUTTONS */
 
-document.querySelectorAll(".window").forEach(function(win) {
-    const bar = win.querySelector(".titlebar");
-
-    let dragging = false;
-    let xOffset = 0;
-    let yOffset = 0;
-
-    bar.addEventListener("pointerdown", function(event) {
-        if (event.target.closest("button")) return;
-
-        dragging = true;
-        xOffset = event.clientX - win.offsetLeft;
-        yOffset = event.clientY - win.offsetTop;
-
-        bar.setPointerCapture(event.pointerId);
-        focusWindow(win);
+document.querySelectorAll("[data-minimize]")
+    .forEach(function(button) {
+        button.addEventListener("click", function() {
+            minimizeApp(button.dataset.minimize);
+        });
     });
 
-    bar.addEventListener("pointermove", function(event) {
-        if (!dragging) return;
-
-        const maxX = Math.max(0, innerWidth - win.offsetWidth);
-        const maxY = Math.max(0, innerHeight - 75);
-
-        const x = event.clientX - xOffset;
-        const y = event.clientY - yOffset;
-
-        win.style.left = Math.max(0, Math.min(x, maxX)) + "px";
-        win.style.top = Math.max(0, Math.min(y, maxY)) + "px";
+document.querySelectorAll("[data-close]")
+    .forEach(function(button) {
+        button.addEventListener("click", function() {
+            closeApp(button.dataset.close);
+        });
     });
 
-    bar.addEventListener("pointerup", function() {
-        dragging = false;
+/* DRAGGABLE WINDOWS */
+
+document.querySelectorAll(".window")
+    .forEach(function(win) {
+        const titlebar = win.querySelector(".titlebar");
+
+        let dragging = false;
+        let offsetX = 0;
+        let offsetY = 0;
+
+        titlebar.addEventListener(
+            "pointerdown",
+            function(event) {
+                if (event.button !== 0) return;
+                if (event.target.closest("button")) return;
+
+                dragging = true;
+
+                offsetX = event.clientX - win.offsetLeft;
+                offsetY = event.clientY - win.offsetTop;
+
+                titlebar.setPointerCapture(event.pointerId);
+
+                focusWindow(win);
+            }
+        );
+
+        titlebar.addEventListener(
+            "pointermove",
+            function(event) {
+                if (!dragging) return;
+
+                const maxX = Math.max(
+                    0,
+                    desktop.clientWidth - win.offsetWidth
+                );
+
+                const maxY = Math.max(
+                    0,
+                    desktop.clientHeight - 80
+                );
+
+                const x = event.clientX - offsetX;
+                const y = event.clientY - offsetY;
+
+                win.style.left =
+                    Math.max(0, Math.min(x, maxX)) + "px";
+
+                win.style.top =
+                    Math.max(0, Math.min(y, maxY)) + "px";
+            }
+        );
+
+        function stopDragging() {
+            dragging = false;
+        }
+
+        titlebar.addEventListener(
+            "pointerup",
+            stopDragging
+        );
+
+        titlebar.addEventListener(
+            "pointercancel",
+            stopDragging
+        );
+
+        win.addEventListener("pointerdown", function() {
+            focusWindow(win);
+        });
     });
 
-    bar.addEventListener("pointercancel", function() {
-        dragging = false;
+/* ========================================
+   START MENU AND DESKTOP
+   ======================================== */
+
+document.querySelectorAll("[data-open]")
+    .forEach(function(button) {
+        button.addEventListener("click", function() {
+            openApp(button.dataset.open);
+        });
     });
 
-    win.addEventListener("pointerdown", function() {
-        focusWindow(win);
+getElement("startButton")
+    .addEventListener("click", function(event) {
+        event.stopPropagation();
+
+        startMenu.classList.toggle("hidden");
     });
+
+document.addEventListener("pointerdown", function(event) {
+    if (
+        !event.target.closest("#startMenu") &&
+        !event.target.closest("#startButton")
+    ) {
+        startMenu.classList.add("hidden");
+    }
 });
 
-/* Start Menu */
+document.addEventListener("keydown", function(event) {
+    if (event.key === "Escape") {
+        startMenu.classList.add("hidden");
+    }
+});
 
-document.getElementById("startButton").onclick = function() {
-    startMenu.classList.toggle("hidden");
-};
+getElement("showDesktopButton")
+    .addEventListener("click", function() {
+        Object.keys(appNames).forEach(function(name) {
+            minimizeApp(name);
+        });
+    });
 
-/* Clock */
+/* ========================================
+   CLOCK
+   ======================================== */
 
 function updateClock() {
-    document.getElementById("clock").textContent =
-        new Date().toLocaleTimeString([], {
+    const now = new Date();
+
+    const formattedTime = now.toLocaleTimeString(
+        [],
+        {
             hour: "2-digit",
             minute: "2-digit"
-        });
+        }
+    );
+
+    getElement("clock").textContent = formattedTime;
+
+    getElement("clock").title = now.toDateString();
 }
 
 updateClock();
+
 setInterval(updateClock, 1000);
 
-/* Notes */
+/* ========================================
+   NOTES APPLICATION
+   ======================================== */
 
-const notesText = document.getElementById("notesText");
-const notesStatus = document.getElementById("notesStatus");
+const noteTitle = getElement("noteTitle");
+const notesText = getElement("notesText");
+const notesStatus = getElement("notesStatus");
+const wordCount = getElement("wordCount");
 
-const oldNote = localStorage.getItem("nexus_note_v1");
+const NOTE_KEY = "nexus_note_v1";
 
-try {
-    if (oldNote) {
-        notesText.value = JSON.parse(oldNote).content || "";
+function loadNotes() {
+    const saved = loadData(NOTE_KEY, null);
+
+    if (saved && typeof saved === "object") {
+        noteTitle.value = saved.title || "";
+        notesText.value = saved.content || "";
     } else {
-        notesText.value = localStorage.getItem("nexusNotes") || "";
+        notesText.value =
+            localStorage.getItem("nexusNotes") || "";
     }
-} catch {
-    notesText.value = localStorage.getItem("nexusNotes") || "";
+
+    updateWordCount();
 }
 
-notesText.addEventListener("input", function() {
-    try {
-        localStorage.setItem("nexusNotes", notesText.value);
-        notesStatus.textContent = "Saved";
-    } catch {
-        notesStatus.textContent = "Save failed";
-    }
-});
+function updateWordCount() {
+    const text = notesText.value.trim();
 
-/* File System */
+    const count = text
+        ? text.split(/\s+/).length
+        : 0;
 
-const FILE_KEY = "nexus_files_final";
+    wordCount.textContent = count + " words";
+}
+
+function saveNotes() {
+    const note = {
+        title: noteTitle.value,
+        content: notesText.value,
+        updated: new Date().toISOString()
+    };
+
+    notesStatus.textContent = "Saving...";
+
+    const saved = saveData(NOTE_KEY, note);
+
+    notesStatus.textContent = saved
+        ? "Saved"
+        : "Save failed";
+
+    updateWordCount();
+}
+
+noteTitle.addEventListener("input", saveNotes);
+notesText.addEventListener("input", saveNotes);
+
+getElement("clearNotesButton")
+    .addEventListener("click", function() {
+        if (!confirm("Clear your note?")) return;
+
+        notesText.value = "";
+        saveNotes();
+    });
+
+loadNotes();
+
+/* ========================================
+   VIRTUAL FILE SYSTEM
+   ======================================== */
+
+const FILE_KEY = "nexus_files_beginner_v11";
 
 const defaultFiles = [
     {
@@ -169,45 +403,79 @@ const defaultFiles = [
         content: ""
     },
     {
+        id: "projects",
+        name: "Projects",
+        type: "folder",
+        parent: "root",
+        content: ""
+    },
+    {
         id: "welcome",
         name: "Welcome.txt",
         type: "file",
         parent: "root",
-        content: "Welcome to NexusOS!"
+        content:
+            "Welcome to NexusOS!\n\n" +
+            "Create your own folders and text files."
     }
 ];
 
-let files;
+function migrateOlderFiles() {
+    const oldKeys = [
+        "nexus_files_final",
+        "nexus_files_v13",
+        "nexus_files_retro",
+        "nexus_files_v1"
+    ];
 
-try {
-    const saved = JSON.parse(localStorage.getItem(FILE_KEY));
+    for (const key of oldKeys) {
+        const oldFiles = loadData(key, null);
 
-    if (Array.isArray(saved)) {
-        files = saved;
-    } else {
-        files = defaultFiles;
+        if (!Array.isArray(oldFiles)) continue;
+
+        return oldFiles.map(function(item) {
+            return {
+                id: String(item.id),
+                name: String(item.name),
+                type: item.type,
+                parent: item.parent ?? item.parentId ?? "root",
+                content: item.content || ""
+            };
+        });
     }
-} catch {
-    files = defaultFiles;
+
+    return null;
+}
+
+let files = loadData(FILE_KEY, null);
+
+if (!Array.isArray(files)) {
+    files = migrateOlderFiles() ||
+        defaultFiles.map(function(item) {
+            return { ...item };
+        });
+
+    saveData(FILE_KEY, files);
 }
 
 let currentFolder = "root";
-let currentFile = null;
+let currentFileId = null;
+let savedEditorContent = "";
 
-const fileList = document.getElementById("fileList");
-const fileText = document.getElementById("fileText");
-
-function saveFiles() {
-    try {
-        localStorage.setItem(FILE_KEY, JSON.stringify(files));
-        return true;
-    } catch {
-        alert("Unable to save files.");
-        return false;
-    }
-}
+const fileList = getElement("fileList");
+const folderPathElement = getElement("folderPath");
+const fileStatus = getElement("fileStatus");
+const fileSearch = getElement("fileSearch");
+const fileSort = getElement("fileSort");
 
 function createId() {
+    if (
+        typeof crypto !== "undefined" &&
+        typeof crypto.randomUUID === "function"
+    ) {
+        return crypto.randomUUID();
+    }
+
     return Date.now() + "-" + Math.random();
 }
 
@@ -217,97 +485,219 @@ function findFile(id) {
     });
 }
 
-function folderPath() {
-    const parts = [];
-    let id = currentFolder;
+function getChildren(parentId) {
+    return files.filter(function(file) {
+        return file.parent === parentId;
+    });
+}
 
-    while (id !== "root") {
-        const folder = findFile(id);
+function saveFiles() {
+    return saveData(FILE_KEY, files);
+}
+
+function fileNameExists(name, parent, excludeId = null) {
+    return files.some(function(file) {
+        return file.id !== excludeId &&
+            file.parent === parent &&
+            file.name.toLowerCase() === name.toLowerCase();
+    });
+}
+
+/* FOLDER PATH */
+
+function getFolderPath() {
+    const parts = [];
+
+    const visited = new Set();
+
+    let folderId = currentFolder;
+
+    while (folderId !== "root") {
+        if (visited.has(folderId)) break;
+
+        visited.add(folderId);
+
+        const folder = findFile(folderId);
+
         if (!folder) break;
 
         parts.unshift(folder.name);
-        id = folder.parent;
+
+        folderId = folder.parent;
     }
 
-    return "Home / " + parts.join(" / ");
+    return "Home" +
+        (parts.length ? " / " + parts.join(" / ") : "");
 }
+
+/* NAVIGATION */
+
+function openFolder(id) {
+    if (id !== "root") {
+        const folder = findFile(id);
+
+        if (!folder || folder.type !== "folder") {
+            return;
+        }
+    }
+
+    currentFolder = id;
+
+    fileSearch.value = "";
+
+    renderFiles();
+}
+
+function goBack() {
+    if (currentFolder === "root") return;
+
+    const folder = findFile(currentFolder);
+
+    openFolder(folder ? folder.parent : "root");
+}
+
+getElement("backButton")
+    .addEventListener("click", goBack);
+
+getElement("homeButton")
+    .addEventListener("click", function() {
+        openFolder("root");
+    });
+
+/* SEARCH AND SORT */
+
+fileSearch.addEventListener("input", function() {
+    renderFiles();
+});
+
+fileSort.addEventListener("change", function() {
+    renderFiles();
+});
+
+function getVisibleFiles() {
+    const search = fileSearch.value
+        .trim()
+        .toLowerCase();
+
+    const sort = fileSort.value;
+
+    const visible = getChildren(currentFolder)
+        .filter(function(file) {
+            return file.name
+                .toLowerCase()
+                .includes(search);
+        });
+
+    visible.sort(function(a, b) {
+        if (sort === "type" && a.type !== b.type) {
+            return a.type.localeCompare(b.type);
+        }
+
+        return a.name.localeCompare(b.name);
+    });
+
+    return visible;
+}
+
+/* SHOW FILES */
 
 function renderFiles() {
     fileList.replaceChildren();
 
-    document.getElementById("path").textContent = folderPath();
+    folderPathElement.value = getFolderPath();
 
-    const children = files.filter(function(file) {
-        return file.parent === currentFolder;
-    });
+    const visible = getVisibleFiles();
 
-    children.forEach(function(file) {
+    visible.forEach(function(file) {
         const button = document.createElement("button");
+
+        button.type = "button";
         button.className = "file-item";
 
         const icon = document.createElement("span");
-        icon.textContent = file.type === "folder" ? "📁" : "📄";
+
+        icon.textContent = file.type === "folder"
+            ? "▣"
+            : "▤";
 
         const name = document.createElement("small");
+
         name.textContent = file.name;
 
         button.append(icon, name);
 
-        button.onclick = function() {
+        button.addEventListener("click", function() {
             if (file.type === "folder") {
-                currentFolder = file.id;
-                renderFiles();
+                openFolder(file.id);
             } else {
                 openTextFile(file.id);
             }
-        };
+        });
 
-        button.oncontextmenu = function(event) {
-            event.preventDefault();
+        button.addEventListener(
+            "contextmenu",
+            function(event) {
+                event.preventDefault();
 
-            const action = prompt(
-                'Type "rename" or "delete" for ' + file.name
-            );
+                const action = prompt(
+                    'Type "rename" or "delete" for ' +
+                    file.name
+                );
 
-            if (action === "rename") renameFile(file.id);
-            if (action === "delete") deleteFile(file.id);
-        };
+                if (!action) return;
+
+                if (action.toLowerCase() === "rename") {
+                    renameFile(file.id);
+                }
+
+                if (action.toLowerCase() === "delete") {
+                    deleteFile(file.id);
+                }
+            }
+        );
 
         fileList.appendChild(button);
     });
 
-    document.getElementById("fileStatus").textContent =
-        children.length + " items • Right-click to manage";
+    if (visible.length === 0) {
+        const message = document.createElement("p");
+
+        message.textContent = "No files to display.";
+        message.style.color = "#777";
+
+        fileList.appendChild(message);
+    }
+
+    fileStatus.textContent =
+        visible.length + " item(s)";
 }
 
-function newFolder() {
-    createItem("folder");
-}
-
-function newFile() {
-    createItem("file");
-}
+/* CREATE FOLDER OR FILE */
 
 function createItem(type) {
-    const name = prompt("Enter " + type + " name:");
+    const entered = prompt(
+        type === "folder"
+            ? "New folder name:"
+            : "New file name:"
+    );
 
-    if (!name || !name.trim()) return;
+    if (entered === null) return;
 
-    const cleanName = name.trim();
+    const name = entered.trim();
 
-    const exists = files.some(function(file) {
-        return file.parent === currentFolder &&
-            file.name.toLowerCase() === cleanName.toLowerCase();
-    });
+    if (!name) {
+        showMessage("Please enter a name.");
+        return;
+    }
 
-    if (exists) {
-        alert("That name already exists.");
+    if (fileNameExists(name, currentFolder)) {
+        showMessage("An item with that name already exists.");
         return;
     }
 
     const item = {
         id: createId(),
-        name: cleanName,
+        name: name,
         type: type,
         parent: currentFolder,
         content: ""
@@ -321,39 +711,46 @@ function createItem(type) {
     }
 
     renderFiles();
+
+    showMessage(name + " created");
 }
 
-function goBack() {
-    if (currentFolder === "root") return;
+getElement("newFolderButton")
+    .addEventListener("click", function() {
+        createItem("folder");
+    });
 
-    const folder = findFile(currentFolder);
-    currentFolder = folder ? folder.parent : "root";
+getElement("newFileButton")
+    .addEventListener("click", function() {
+        createItem("file");
+    });
 
-    renderFiles();
-}
+/* RENAME FILES */
 
 function renameFile(id) {
     const file = findFile(id);
+
     if (!file) return;
 
-    const name = prompt("Rename:", file.name);
-    if (!name || !name.trim()) return;
+    const entered = prompt(
+        "Rename:",
+        file.name
+    );
 
-    const cleanName = name.trim();
+    if (entered === null) return;
 
-    const exists = files.some(function(other) {
-        return other.id !== id &&
-            other.parent === file.parent &&
-            other.name.toLowerCase() === cleanName.toLowerCase();
-    });
+    const name = entered.trim();
 
-    if (exists) {
-        alert("That name already exists.");
+    if (!name) return;
+
+    if (fileNameExists(name, file.parent, file.id)) {
+        showMessage("That name already exists.");
         return;
     }
 
     const oldName = file.name;
-    file.name = cleanName;
+
+    file.name = name;
 
     if (!saveFiles()) {
         file.name = oldName;
@@ -361,27 +758,47 @@ function renameFile(id) {
     }
 
     renderFiles();
+
+    showMessage("Item renamed");
 }
 
-function deleteFile(id) {
-    const file = findFile(id);
-    if (!file) return;
+/* DELETE FILES AND FOLDERS */
 
-    if (!confirm("Delete " + file.name + "?")) return;
-
+function getDescendantIds(id) {
     const ids = new Set([id]);
+
     let changed = true;
 
     while (changed) {
         changed = false;
 
-        files.forEach(function(item) {
-            if (ids.has(item.parent) && !ids.has(item.id)) {
-                ids.add(item.id);
+        files.forEach(function(file) {
+            if (
+                ids.has(file.parent) &&
+                !ids.has(file.id)
+            ) {
+                ids.add(file.id);
                 changed = true;
             }
         });
     }
+
+    return ids;
+}
+
+function deleteFile(id) {
+    const file = findFile(id);
+
+    if (!file) return;
+
+    const confirmed = confirm(
+        "Delete " + file.name +
+        " and its contents?"
+    );
+
+    if (!confirmed) return;
+
+    const ids = getDescendantIds(id);
 
     const previous = files;
 
@@ -394,180 +811,526 @@ function deleteFile(id) {
         return;
     }
 
-    if (ids.has(currentFile)) {
-        currentFile = null;
-        closeApp("editor");
+    if (currentFileId && ids.has(currentFileId)) {
+        currentFileId = null;
+        savedEditorContent = "";
+        minimizeApp("editor");
     }
 
     renderFiles();
+
+    showMessage("Item deleted");
 }
 
-/* Text Editor */
+/* ========================================
+   TEXT EDITOR
+   ======================================== */
+
+const fileEditor = getElement("fileEditor");
+const editorTitle = getElement("editorTitle");
+const editorStatus = getElement("editorStatus");
+
+function hasUnsavedFile() {
+    return (
+        currentFileId !== null &&
+        fileEditor.value !== savedEditorContent
+    );
+}
 
 function openTextFile(id) {
     const file = findFile(id);
+
     if (!file || file.type !== "file") return;
 
-    currentFile = id;
+    if (hasUnsavedFile()) {
+        if (!confirm("Discard unsaved file changes?")) {
+            return;
+        }
+    }
 
-    document.getElementById("editorTitle").textContent = file.name;
-    document.getElementById("editorStatus").textContent = "Ready";
-    fileText.value = file.content;
+    currentFileId = id;
+
+    editorTitle.textContent = file.name;
+
+    fileEditor.value = file.content || "";
+
+    savedEditorContent = fileEditor.value;
+
+    editorStatus.textContent = "Ready";
 
     openApp("editor");
 }
 
-fileText.addEventListener("input", function() {
-    document.getElementById("editorStatus").textContent =
-        "Unsaved changes";
+fileEditor.addEventListener("input", function() {
+    editorStatus.textContent = "Unsaved changes";
 });
 
-function saveFile() {
-    const file = findFile(currentFile);
+function saveCurrentFile() {
+    const file = findFile(currentFileId);
+
     if (!file) return;
 
-    const oldContent = file.content;
-    file.content = fileText.value;
+    const previousContent = file.content;
+
+    file.content = fileEditor.value;
 
     if (!saveFiles()) {
-        file.content = oldContent;
+        file.content = previousContent;
+        editorStatus.textContent = "Save failed";
         return;
     }
 
-    document.getElementById("editorStatus").textContent = "Saved";
+    savedEditorContent = fileEditor.value;
+
+    editorStatus.textContent = "Saved";
+
+    showMessage("File saved");
 }
 
-/* Terminal */
+getElement("saveFileButton")
+    .addEventListener("click", saveCurrentFile);
 
-const output = document.getElementById("output");
-const command = document.getElementById("command");
+/* ========================================
+   TERMINAL
+   ======================================== */
 
-function printLine(text) {
-    output.textContent += "\n" + text;
-    output.scrollTop = output.scrollHeight;
+const terminalOutput = getElement("terminalOutput");
+const terminalInput = getElement("terminalInput");
+
+function printTerminal(message) {
+    terminalOutput.textContent += "\n" + message;
+
+    terminalOutput.scrollTop =
+        terminalOutput.scrollHeight;
 }
 
-document.getElementById("terminalForm").onsubmit = function(event) {
-    event.preventDefault();
+function runCommand(input) {
+    const commandLine = input.trim();
 
-    const text = command.value.trim();
-    command.value = "";
+    if (!commandLine) return;
 
-    if (!text) return;
+    printTerminal("NexusOS> " + commandLine);
 
-    printLine("NexusOS> " + text);
+    const space = commandLine.indexOf(" ");
 
-    const space = text.indexOf(" ");
-    const action = (
-        space === -1 ? text : text.slice(0, space)
+    const command = (
+        space === -1
+            ? commandLine
+            : commandLine.slice(0, space)
     ).toLowerCase();
 
-    const argument = space === -1 ? "" : text.slice(space + 1);
+    const argument = space === -1
+        ? ""
+        : commandLine.slice(space + 1).trim();
 
-    switch (action) {
+    switch (command) {
         case "help":
-            printLine("help, clear, date, time, ls, echo, version");
-            break;
-
-        case "clear":
-            output.textContent = "";
-            break;
-
-        case "date":
-            printLine(new Date().toDateString());
-            break;
-
-        case "time":
-            printLine(new Date().toLocaleTimeString());
-            break;
-
-        case "ls":
-            printLine(
-                files.filter(file => file.parent === currentFolder)
-                    .map(file => file.name)
-                    .join("\n") || "(empty)"
+            printTerminal(
+                "Commands:\n" +
+                "help - Show commands\n" +
+                "clear - Clear terminal\n" +
+                "date - Current date\n" +
+                "time - Current time\n" +
+                "ls - List files\n" +
+                "pwd - Current folder\n" +
+                "echo - Print text\n" +
+                "open - Open an app\n" +
+                "version - System version"
             );
             break;
 
+        case "clear":
+            terminalOutput.textContent = "";
+            break;
+
+        case "date":
+            printTerminal(new Date().toDateString());
+            break;
+
+        case "time":
+            printTerminal(new Date().toLocaleTimeString());
+            break;
+
+        case "ls":
+            const names = getChildren(currentFolder)
+                .map(function(file) {
+                    return file.name;
+                });
+
+            printTerminal(
+                names.join("\n") || "(empty)"
+            );
+            break;
+
+        case "pwd":
+            printTerminal(getFolderPath());
+            break;
+
         case "echo":
-            printLine(argument);
+            printTerminal(argument);
+            break;
+
+        case "open":
+            if (Object.hasOwn(appNames, argument)) {
+                openApp(argument);
+            } else {
+                printTerminal("Unknown application");
+            }
             break;
 
         case "version":
-            printLine("NexusOS 1.0");
+            printTerminal("NexusOS v1.1");
             break;
 
         default:
-            printLine("Unknown command");
-    }
-};
-
-/* Calculator */
-
-const calcDisplay = document.getElementById("calcDisplay");
-
-let firstNumber = null;
-let operation = null;
-let startNewNumber = false;
-
-function calcNumber(value) {
-    if (startNewNumber) {
-        calcDisplay.value = "0";
-        startNewNumber = false;
-    }
-
-    if (value === "." && calcDisplay.value.includes(".")) {
-        return;
-    }
-
-    if (value === ".") {
-        calcDisplay.value += ".";
-    } else if (calcDisplay.value === "0" ||
-               calcDisplay.value === "Error") {
-        calcDisplay.value = value;
-    } else {
-        calcDisplay.value += value;
+            printTerminal(
+                "Unknown command: " + command
+            );
     }
 }
 
-function calcOperator(op) {
-    firstNumber = Number(calcDisplay.value);
-    operation = op;
-    startNewNumber = true;
+getElement("terminalForm")
+    .addEventListener("submit", function(event) {
+        event.preventDefault();
+
+        const input = terminalInput.value;
+
+        terminalInput.value = "";
+
+        runCommand(input);
+    });
+
+/* ========================================
+   CALCULATOR
+   ======================================== */
+
+const calcDisplay = getElement("calcDisplay");
+
+let calcValue = "0";
+let storedNumber = null;
+let pendingOperator = null;
+let waitingForNumber = false;
+
+function updateCalculator() {
+    calcDisplay.value = calcValue;
 }
 
-function calcEquals() {
-    if (firstNumber === null || !operation) return;
+function calculate(a, b, operator) {
+    switch (operator) {
+        case "add":
+            return a + b;
 
-    const secondNumber = Number(calcDisplay.value);
-    let result;
+        case "subtract":
+            return a - b;
 
-    switch (operation) {
-        case "+": result = firstNumber + secondNumber; break;
-        case "-": result = firstNumber - secondNumber; break;
-        case "*": result = firstNumber * secondNumber; break;
-        case "/": result = secondNumber === 0
-            ? NaN : firstNumber / secondNumber; break;
+        case "multiply":
+            return a * b;
+
+        case "divide":
+            return b === 0 ? NaN : a / b;
+
+        default:
+            return b;
+    }
+}
+
+function handleCalculator(action) {
+    if (/^\d$/.test(action)) {
+        if (
+            waitingForNumber ||
+            calcValue === "Error"
+        ) {
+            calcValue = action;
+            waitingForNumber = false;
+        } else {
+            calcValue = calcValue === "0"
+                ? action
+                : calcValue + action;
+        }
+
+    } else if (action === "decimal") {
+        if (waitingForNumber) {
+            calcValue = "0.";
+            waitingForNumber = false;
+        } else if (!calcValue.includes(".")) {
+            calcValue += ".";
+        }
+
+    } else if (action === "clear") {
+        calcValue = "0";
+        storedNumber = null;
+        pendingOperator = null;
+        waitingForNumber = false;
+
+    } else if (action === "back") {
+        calcValue = calcValue.length > 1
+            ? calcValue.slice(0, -1)
+            : "0";
+
+    } else if (action === "sign") {
+        calcValue = String(
+            Number(calcValue) * -1
+        );
+
+    } else if (action === "percent") {
+        calcValue = String(
+            Number(calcValue) / 100
+        );
+
+    } else if (
+        ["add", "subtract", "multiply", "divide"]
+            .includes(action)
+    ) {
+        if (
+            pendingOperator !== null &&
+            !waitingForNumber
+        ) {
+            const result = calculate(
+                storedNumber,
+                Number(calcValue),
+                pendingOperator
+            );
+
+            calcValue = Number.isFinite(result)
+                ? String(result)
+                : "Error";
+        }
+
+        storedNumber = Number(calcValue);
+
+        pendingOperator = action;
+
+        waitingForNumber = true;
+
+    } else if (action === "equals") {
+        if (
+            pendingOperator !== null &&
+            storedNumber !== null
+        ) {
+            const result = calculate(
+                storedNumber,
+                Number(calcValue),
+                pendingOperator
+            );
+
+            calcValue = Number.isFinite(result)
+                ? String(Number(result.toPrecision(12)))
+                : "Error";
+
+            storedNumber = null;
+            pendingOperator = null;
+            waitingForNumber = true;
+        }
     }
 
-    calcDisplay.value = Number.isFinite(result)
-        ? String(Number(result.toPrecision(12)))
-        : "Error";
-
-    firstNumber = null;
-    operation = null;
-    startNewNumber = true;
+    updateCalculator();
 }
 
-function calcClear() {
-    calcDisplay.value = "0";
-    firstNumber = null;
-    operation = null;
-    startNewNumber = false;
+document.querySelectorAll("[data-calc]")
+    .forEach(function(button) {
+        button.addEventListener("click", function() {
+            handleCalculator(button.dataset.calc);
+        });
+    });
+
+/* ========================================
+   FILE BACKUP SYSTEM
+   ======================================== */
+
+const backupFileInput = getElement("backupFileInput");
+
+function exportBackup() {
+    const backup = {
+        application: "NexusOS",
+        version: "1.1",
+        exportedAt: new Date().toISOString(),
+        files: files
+    };
+
+    const text = JSON.stringify(
+        backup,
+        null,
+        2
+    );
+
+    const blob = new Blob(
+        [text],
+        { type: "application/json" }
+    );
+
+    const url = URL.createObjectURL(blob);
+
+    const link = document.createElement("a");
+
+    link.href = url;
+    link.download = "nexusos-backup.json";
+
+    document.body.appendChild(link);
+
+    link.click();
+    link.remove();
+
+    setTimeout(function() {
+        URL.revokeObjectURL(url);
+    }, 1000);
 }
 
-/* Start NexusOS */
+getElement("exportFilesButton")
+    .addEventListener("click", exportBackup);
 
-renderFiles();
-updateTaskbar();
-openApp("files");
+getElement("importFilesButton")
+    .addEventListener("click", function() {
+        backupFileInput.click();
+    });
+
+/* CHECK BACKUP FORMAT */
+
+function validBackup(backup) {
+    if (!backup || !Array.isArray(backup.files)) {
+        return false;
+    }
+
+    if (backup.files.length > 5000) {
+        return false;
+    }
+
+    const ids = new Set();
+
+    for (const file of backup.files) {
+        if (!file || typeof file !== "object") {
+            return false;
+        }
+
+        if (
+            typeof file.id !== "string" ||
+            typeof file.name !== "string" ||
+            typeof file.parent !== "string" ||
+            typeof file.content !== "string"
+        ) {
+            return false;
+        }
+
+        if (
+            file.type !== "file" &&
+            file.type !== "folder"
+        ) {
+            return false;
+        }
+
+        if (
+            file.id === "root" ||
+            !file.id ||
+            !file.name.trim() ||
+            ids.has(file.id)
+        ) {
+            return false;
+        }
+
+        ids.add(file.id);
+    }
+
+    const items = new Map(
+        backup.files.map(file => [file.id, file])
+    );
+
+    for (const file of backup.files) {
+        const visited = new Set([file.id]);
+
+        let parent = file.parent;
+
+        while (parent !== "root") {
+            if (visited.has(parent)) return false;
+
+            visited.add(parent);
+
+            const folder = items.get(parent);
+
+            if (!folder || folder.type !== "folder") {
+                return false;
+            }
+
+            parent = folder.parent;
+        }
+    }
+
+    return true;
+}
+
+/* IMPORT BACKUP FILE */
+
+backupFileInput.addEventListener(
+    "change",
+    async function() {
+        const selected = backupFileInput.files[0];
+
+        if (!selected) return;
+
+        try {
+            if (selected.size > 5 * 1024 * 1024) {
+                alert("Backup file is too large.");
+                return;
+            }
+
+            const text = await selected.text();
+
+            const backup = JSON.parse(text);
+
+            if (!validBackup(backup)) {
+                alert("Invalid NexusOS backup.");
+                return;
+            }
+
+            const confirmed = confirm(
+                "This will replace your current files. Continue?"
+            );
+
+            if (!confirmed) return;
+
+            const previous = files;
+
+            files = backup.files.map(function(file) {
+                return { ...file };
+            });
+
+            if (!saveFiles()) {
+                files = previous;
+                return;
+            }
+
+            currentFolder = "root";
+            currentFileId = null;
+            savedEditorContent = "";
+
+            minimizeApp("editor");
+
+            fileSearch.value = "";
+
+            renderFiles();
+
+            showMessage("Backup restored");
+
+        } catch (error) {
+            console.error("Import failed:", error);
+
+            alert("Could not read the backup.");
+        } finally {
+            backupFileInput.value = "";
+        }
+    }
+);
+
+/* ========================================
+   START NEXUSOS
+   ======================================== */
+
+function initializeNexusOS() {
+    renderFiles();
+    updateTaskbar();
+    updateClock();
+
+    openApp("files");
+
+    console.log("NexusOS v1.1 started.");
+}
+
+initializeNexusOS();
